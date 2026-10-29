@@ -1,0 +1,26 @@
+{
+  "name": "trustdesk",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "bun@1.3.14",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun scripts/with-env.ts turbo run dev",
+    "build": "bun scripts/with-env.ts turbo run build",
+    "typecheck": "bun scripts/with-env.ts turbo run typecheck && tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "openapi:export": "bun scripts/with-env.ts turbo run openapi:export",
+    "api:generate": "bun scripts/with-env.ts turbo run api:generate",
+    "check": "bun run lint && bun run typecheck && bun run build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "bun-types": "1.3.14",
+    "turbo": "2.11.4",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": [".env", "tsconfig.base.json"],
+  "globalEnv": ["NODE_ENV"],
+  "tasks": {
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["transit"],
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["API_PORT", "WEB_ORIGIN", "VITE_API_URL"]
+    },
+    "openapi:export": {
+      "dependsOn": ["transit"],
+      "outputs": ["openapi.json"]
+    },
+    "api:generate": {
+      "dependsOn": ["@trustdesk/api#openapi:export"],
+      "outputs": ["src/api/**"]
+    },
+    "@trustdesk/web#dev": {
+      "dependsOn": ["api:generate"],
+      "cache": false,
+      "persistent": true,
+      "env": ["VITE_API_URL"]
+    },
+    "@trustdesk/web#typecheck": {
+      "dependsOn": ["transit", "api:generate"],
+      "outputs": []
+    },
+    "@trustdesk/web#build": {
+      "dependsOn": ["^build", "api:generate"],
+      "outputs": ["dist/**"],
+      "env": ["VITE_API_URL"]
+    }
+  }
+}
