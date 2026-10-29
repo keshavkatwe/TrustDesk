@@ -1,52 +1,41 @@
 import { useQuery } from '@tanstack/react-query';
-import { getHealthOptions } from './api/@tanstack/react-query.gen.ts';
-import { Badge } from './components/ui/badge.tsx';
-import { Button } from './components/ui/button.tsx';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from './components/ui/card.tsx';
+import { useState } from 'react';
+import { getDemoWorkspaceOptions } from '@/api/@tanstack/react-query.gen';
+import { AppSidebar } from '@/components/app-sidebar';
+import { Button } from '@/components/ui/button';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { InboxWorkspace } from '@/features/inbox/inbox-workspace';
+import { LoadError, LoadingWorkspace } from '@/features/inbox/states';
+import type { Tenant } from '@/features/inbox/types';
 
 export function App() {
-  const health = useQuery({ ...getHealthOptions(), retry: false });
-
+  const workspace = useQuery({ ...getDemoWorkspaceOptions(), retry: false });
+  const [tenantId, setTenantId] = useState<Tenant['id']>('qamar');
+  const tenant = workspace.data?.tenants.find((entry) => entry.id === tenantId);
+  if (workspace.isError)
+    return (
+      <main className="mx-auto max-w-xl p-8">
+        <LoadError onRetry={() => void workspace.refetch()} />
+      </main>
+    );
+  if (!tenant || !workspace.data)
+    return (
+      <main className="p-8">
+        <LoadingWorkspace />
+      </main>
+    );
   return (
-    <main className="mx-auto flex min-h-svh max-w-lg items-center px-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>
-            <h1>TrustDesk</h1>
-          </CardTitle>
-          <CardDescription>The workspace is ready for the first feature.</CardDescription>
-          <CardAction>
-            <Badge variant="secondary">Boilerplate</Badge>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {health.isPending
-              ? 'Connecting to the API…'
-              : health.isError
-                ? 'API unavailable. Start the API and try again.'
-                : 'API connected.'}
-          </p>
-        </CardContent>
-        <CardFooter className="gap-2">
-          <Button onClick={() => void health.refetch()} disabled={health.isFetching}>
-            {health.isFetching ? 'Checking…' : 'Check API'}
-          </Button>
-          <Button variant="outline" asChild>
-            <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/openapi`}>
-              API docs
-            </a>
-          </Button>
-        </CardFooter>
-      </Card>
-    </main>
+    <TooltipProvider>
+      <SidebarProvider className="h-svh overflow-hidden">
+        <Button asChild variant="outline" className="sr-only focus:not-sr-only focus:absolute">
+          <a href="#inbox">Skip to inbox</a>
+        </Button>
+        <AppSidebar tenants={workspace.data.tenants} tenant={tenant} onTenantChange={setTenantId} />
+        <SidebarInset className="min-w-0">
+          <InboxWorkspace key={tenant.id} tenant={tenant} />
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }

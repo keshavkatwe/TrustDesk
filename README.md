@@ -1,6 +1,6 @@
 # TrustDesk
 
-The initial Turborepo workspace for the Trust Desk engineering challenge. This step sets up the project foundation; it does not implement the message pipeline yet.
+Turborepo workspace for the Trust Desk engineering challenge, with a stock shadcn inbox and review prototype. The message-processing pipeline is not implemented yet.
 
 ## Project guidance
 
@@ -22,7 +22,19 @@ bun run dev
 - API health: <http://localhost:3000/healthz>
 - API documentation: <http://localhost:3000/openapi>
 
-No database or API key is needed for this boilerplate. The worker is a placeholder; no queue consumers run yet.
+No database or API key is needed for this prototype. The worker is a placeholder; no queue consumers run yet.
+
+## Try the inbox
+
+1. Open the web app. The inbox defaults to **Needs approval**.
+2. Choose a business from the bottom-left sidebar selector and a named approver from the header. On narrow screens, open the sidebar to change businesses.
+3. Select a message, inspect the original request, quote and evidence, then edit or review the reply. Approval shows the original/edited wording before confirmation.
+4. Approve, reject or hand off a draft. Rejection and handoff require a reason. **Approved does not mean sent**; all actions are simulations.
+5. Select **Superseded** in the status filter to inspect the old 25-laptop request and open its 30-laptop correction. Search for an unmatched phrase to try the empty state.
+
+Six hand-authored scenarios are based on challenge seed events `evt_0001/0002/0003/0005/0008/0009`. Some messages are condensed and display times are illustrative. Quote arithmetic uses sample catalogue values, not a pricing service. No OpenAI calls, evaluation scores, channel delivery or authentication run. The approver picker is a demo identity selector. Changes are shared by browsers connected to the same API process and reset when that process restarts. Reply edits are local until a decision is recorded; navigating to another message discards unreviewed edits.
+
+The fixture adapter lives in `apps/api/src/demo/` and uses the generated API client. It will be replaced with durable services in `packages/core` and `packages/db`. In-memory checks do not establish production isolation or concurrency guarantees. Quality & Trust, Activity and Settings are reserved for later steps.
 
 ## Workspace
 
@@ -63,10 +75,11 @@ bun run api:generate
 | `bun run format` | Format source files |
 | `bun run openapi:export` | Export the API specification |
 | `bun run api:generate` | Export the specification and generate the web client |
-| `bun run check` | Run lint, typechecking, and builds |
+| `bun run test` | Run fixture API behavior and quote-integrity tests |
+| `bun run check` | Run lint, typechecking, tests, and builds |
 
 ## Configuration
 
 Copy `.env.example` to `.env` only if you want to change the defaults. The root environment wrapper forwards configuration to Turbo; task environment variables are explicitly listed in `turbo.json`. Vite reads frontend configuration from the root and exposes only `VITE_*` variables to the browser.
 
-UI components use shadcn/ui defaults. Application features, database setup, queue processing, and AI integration will be added in subsequent steps.
+UI uses [shadcn preset b7BFf3k1o](https://ui.shadcn.com/create?preset=b7BFf3k1o): Radix Nova shapes and spacing, Mist base/chart colors, Teal primary actions, Inter font and Lucide icons. Semantic status badges extend the preset. Theme colors are defined in `apps/web/src/index.css`; badge variants use those tokens. Database setup, queue processing, AI integration and durable approvals will be added in subsequent steps.

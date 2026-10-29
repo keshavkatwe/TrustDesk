@@ -2,6 +2,7 @@ import { cors } from '@elysiajs/cors';
 import { openapi } from '@elysiajs/openapi';
 import { Elysia } from 'elysia';
 import { z } from 'zod';
+import { demoRoutes } from './demo/routes.ts';
 
 const Health = z.object({
   status: z.literal('ok'),
@@ -21,6 +22,7 @@ export function createApp() {
         },
       }),
     )
+    .use(demoRoutes())
     .get('/healthz', () => ({ status: 'ok', service: 'trustdesk-api' }) as const, {
       response: { 200: Health },
       detail: {

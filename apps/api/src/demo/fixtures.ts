@@ -1,0 +1,377 @@
+import { Inbox, Workspace } from './model.ts';
+
+// Hand-authored UI scenarios based on the challenge seed. No inference or policy run is claimed.
+export const workspace = Workspace.parse({
+  tenants: [
+    {
+      id: 'qamar',
+      name: 'Qamar Devices LLC',
+      shortName: 'Qamar',
+      location: 'Dubai, UAE',
+      timezone: 'Asia/Dubai',
+      currency: 'AED',
+      trust: 'supervised',
+      autoSend: 'low_risk_only',
+      approvers: [
+        { id: 'u_aisha', name: 'Aisha K.', role: 'Sales lead' },
+        { id: 'u_rahul', name: 'Rahul M.', role: 'General manager' },
+      ],
+    },
+    {
+      id: 'rimal',
+      name: 'Rimal Event Supply',
+      shortName: 'Rimal',
+      location: 'Riyadh, KSA',
+      timezone: 'Asia/Riyadh',
+      currency: 'SAR',
+      trust: 'supervised',
+      autoSend: 'off',
+      approvers: [
+        { id: 'u_faisal', name: 'Faisal A.', role: 'Owner' },
+        { id: 'u_noura', name: 'Noura S.', role: 'Operations manager' },
+      ],
+    },
+  ],
+});
+
+const common = {
+  revision: 1,
+  status: 'needs_approval',
+  context: [],
+  missing: [],
+  supersededBy: null,
+  decision: null,
+  recommendedAction: 'approve',
+} as const;
+
+export const fixtures = Inbox.parse({
+  items: [
+    {
+      ...common,
+      id: 'q-training',
+      tenantId: 'qamar',
+      sourceEvent: 'evt_0003',
+      title: '30 laptops · 3-month rental',
+      customer: '+971 50 000 1144',
+      channel: 'WhatsApp',
+      language: 'English',
+      receivedAt: '2026-11-02T08:20:28+04:00',
+      body: "Sorry, make that 30 laptops, not 25. We're in JLT if that matters.",
+      context: [
+        {
+          label: 'Earlier customer message · evt_0001',
+          body: 'Hi, we need 25 MacBook Airs for a 3 month training programme starting 1 Dec. Can you do a better price for that volume?',
+        },
+      ],
+      extracted: [
+        { label: 'Product', value: 'MacBook Air 13″ M4 · Q-LAP-001' },
+        { label: 'Quantity', value: '30 laptops (corrected from 25)' },
+        { label: 'Type / duration', value: 'Rental · 3 months' },
+        { label: 'Location', value: 'JLT, Dubai' },
+        { label: 'Start date', value: '1 December 2026' },
+      ],
+      reasons: [
+        {
+          title: 'Customer requested a volume discount',
+          detail:
+            'No percentage was requested. This sample uses the catalogue rate with no discount.',
+          source: 'evt_0001 · Qamar discount policy',
+        },
+        {
+          title: 'Commercial quote requires review',
+          detail:
+            'Review the corrected quantity, delivery charge, and any discount before making a commitment.',
+          source: 'Q-LAP-001 · challenge seed v1.2',
+        },
+      ],
+      missing: ['Delivery / collection arrangement'],
+      quote: {
+        currency: 'AED',
+        vatPercent: 5,
+        lines: [
+          {
+            sku: 'Q-LAP-001',
+            label: 'MacBook Air 13″ M4',
+            unitPriceMinor: 18000,
+            quantity: 30,
+            periods: 3,
+            unit: 'device / month',
+            lineTotalMinor: 1620000,
+          },
+        ],
+        subtotalMinor: 1620000,
+        discountMinor: 0,
+        vatMinor: 81000,
+        totalMinor: 1701000,
+        complete: false,
+        note: 'Rental estimate only. Delivery/setup (Q-SVC-001, AED 150 before VAT) is excluded until the arrangement is confirmed. No discount applied.',
+      },
+      draftReply:
+        'Thanks for the update — I have noted 30 MacBook Air laptops for 3 months from 1 December in JLT. At the catalogue rate, the rental estimate is AED 17,010 including 5% VAT, before delivery/setup. I will ask our sales lead to review your volume-discount request. Will you need delivery and setup?',
+    },
+    {
+      ...common,
+      id: 'q-iphones',
+      tenantId: 'qamar',
+      sourceEvent: 'evt_0002',
+      title: '5 iPhone 16 · purchase',
+      customer: '+971 55 000 2290',
+      channel: 'WhatsApp',
+      language: 'Arabic',
+      receivedAt: '2026-11-02T08:15:00+04:00',
+      body: 'السلام عليكم، أبغى ٥ آيفون 16 للشركة، شراء مو إيجار. كم السعر شامل الضريبة؟',
+      extracted: [
+        { label: 'Product', value: 'iPhone 16 128 GB · Q-PHN-001' },
+        { label: 'Quantity', value: '5 phones' },
+        { label: 'Type', value: 'Purchase' },
+      ],
+      missing: ['Delivery location', 'Delivery / collection arrangement'],
+      reasons: [
+        {
+          title: 'Firm price needs named approval',
+          detail:
+            'Purchase, not rental. Confirm the price and ask for the delivery location without promising availability.',
+          source: 'evt_0002 · Q-PHN-001',
+        },
+      ],
+      quote: {
+        currency: 'AED',
+        vatPercent: 5,
+        lines: [
+          {
+            sku: 'Q-PHN-001',
+            label: 'iPhone 16 128 GB',
+            unitPriceMinor: 339900,
+            quantity: 5,
+            periods: 1,
+            unit: 'phone / purchase',
+            lineTotalMinor: 1699500,
+          },
+        ],
+        subtotalMinor: 1699500,
+        discountMinor: 0,
+        vatMinor: 84975,
+        totalMinor: 1784475,
+        complete: false,
+        note: 'Product total only. Delivery is excluded; the customer has not supplied a location.',
+      },
+      draftReply:
+        'وعليكم السلام، سعر شراء ٥ أجهزة آيفون 16 سعة 128 جيجابايت هو \u2066AED 17,844.75\u2069 شامل ضريبة القيمة المضافة ٥٪، ولا يشمل التوصيل. في أي مدينة ترغبون بالاستلام أو التوصيل؟ سنؤكد التوفر وترتيبات التسليم بعد المراجعة.',
+    },
+    {
+      ...common,
+      id: 'q-abudhabi',
+      tenantId: 'qamar',
+      sourceEvent: 'evt_0005',
+      title: 'New-joiner equipment · Abu Dhabi',
+      customer: 'priya@lumen-advisory.example',
+      channel: 'Email',
+      language: 'English',
+      receivedAt: '2026-11-02T09:02:00+04:00',
+      body: 'FW: adding a vendor quote\n\nForwarded request from Omar: 12 new joiners on 16 November. We need a laptop and a 27-inch monitor each for 6 months at our Abu Dhabi office. Delivery on 15 November, please.',
+      extracted: [
+        { label: 'Equipment', value: '12 laptops + 12 × 27″ monitors' },
+        { label: 'Type / duration', value: 'Rental · 6 months' },
+        { label: 'Location', value: 'Abu Dhabi' },
+        { label: 'Requested delivery', value: '15 November 2026' },
+      ],
+      missing: ['Laptop model'],
+      recommendedAction: 'hand_off',
+      quote: null,
+      reasons: [
+        {
+          title: 'Outside the service area',
+          detail:
+            'Qamar serves Dubai and Sharjah. A person must handle this request before quoting or promising delivery.',
+          source: 'Qamar service-area policy',
+        },
+      ],
+      draftReply:
+        'Thanks for the details. Our standard service area is Dubai and Sharjah. I will pass your Abu Dhabi request to our team to check what may be possible. We have not confirmed equipment availability or delivery for 15 November.',
+    },
+    {
+      ...common,
+      id: 'q-training-old',
+      tenantId: 'qamar',
+      sourceEvent: 'evt_0001',
+      title: '25 laptops · replaced by correction',
+      customer: '+971 50 000 1144',
+      channel: 'WhatsApp',
+      language: 'English',
+      receivedAt: '2026-11-02T08:14:02+04:00',
+      body: 'Hi, we need 25 MacBook Airs for a 3 month training programme starting 1 Dec. Can you do a better price for that volume?',
+      extracted: [{ label: 'Original quantity', value: '25 laptops · now superseded by 30' }],
+      reasons: [
+        {
+          title: 'Newer customer message',
+          detail: 'evt_0003 changes the quantity to 30. This draft cannot be approved.',
+          source: 'evt_0003',
+        },
+      ],
+      quote: null,
+      draftReply:
+        'Thanks — I have noted 25 MacBook Airs for a 3-month rental. Our team will review the volume-pricing request.',
+      status: 'superseded',
+      supersededBy: 'q-training',
+    },
+    {
+      ...common,
+      id: 'r-graduation',
+      tenantId: 'rimal',
+      sourceEvent: 'evt_0008',
+      title: 'Graduation event · stage & seating',
+      customer: 'Graduation enquiry',
+      channel: 'WhatsApp',
+      language: 'Arabic',
+      receivedAt: '2026-11-02T08:30:00+03:00',
+      body: 'السلام عليكم، عندنا حفل تخرج يوم الخميس 19 نوفمبر في الرياض. نحتاج ٣٠٠ كرسي و٣٠ طاولة دائرية ومسرح ٦×٤ متر وشاشة كبيرة. كم التكلفة؟ وأبي تأكيد إنكم متوفرين ذاك اليوم',
+      extracted: [
+        { label: 'Event', value: '19 November 2026 · Riyadh · 1 day' },
+        { label: 'Seating', value: '300 chairs + 30 round tables' },
+        { label: 'Stage', value: '6 × 4 m = 24 m² = 12 decks' },
+        { label: 'Screen', value: 'Dimensions not supplied' },
+      ],
+      missing: [
+        'Screen dimensions',
+        'Delivery / collection trips',
+        'Availability confirmation by operations manager',
+      ],
+      reasons: [
+        {
+          title: 'Availability cannot be promised',
+          detail:
+            'Only the operations manager can confirm availability. This draft asks for details and does not confirm a booking.',
+          source: 'Rimal availability policy',
+        },
+        {
+          title: 'Crew required; quote incomplete',
+          detail:
+            'The 24 m² stage exceeds 12 m². Include one crew shift; screen and delivery are still unpriced.',
+          source: 'R-STG-001 · R-CRW-001',
+        },
+      ],
+      quote: {
+        currency: 'SAR',
+        vatPercent: 15,
+        lines: [
+          {
+            sku: 'R-CHR-001',
+            label: 'White Chiavari chair',
+            unitPriceMinor: 1800,
+            quantity: 300,
+            periods: 1,
+            unit: 'chair / day',
+            lineTotalMinor: 540000,
+          },
+          {
+            sku: 'R-TBL-001',
+            label: 'Round table with linen',
+            unitPriceMinor: 7500,
+            quantity: 30,
+            periods: 1,
+            unit: 'table / day',
+            lineTotalMinor: 225000,
+          },
+          {
+            sku: 'R-STG-001',
+            label: 'Stage deck · 1 × 2 m',
+            unitPriceMinor: 12000,
+            quantity: 12,
+            periods: 1,
+            unit: 'deck / day',
+            lineTotalMinor: 144000,
+          },
+          {
+            sku: 'R-CRW-001',
+            label: 'Setup crew · 4 people, 8 hours',
+            unitPriceMinor: 220000,
+            quantity: 1,
+            periods: 1,
+            unit: 'shift / order',
+            lineTotalMinor: 220000,
+          },
+        ],
+        subtotalMinor: 1129000,
+        discountMinor: 0,
+        vatMinor: 169350,
+        totalMinor: 1298350,
+        complete: false,
+        note: 'Partial estimate: screen and delivery excluded. One crew shift is included. No availability or booking confirmation.',
+      },
+      draftReply:
+        'وعليكم السلام، سجلنا طلبكم لحفل 19 نوفمبر في الرياض: ٣٠٠ كرسي و٣٠ طاولة ومسرح ٦×٤ متر. ما أبعاد الشاشة المطلوبة؟ سنراجع التوفر مع مديرة العمليات ونجهز عرضًا مفصلًا يشمل التجهيز والتوصيل. لم يتم تأكيد التوفر أو الحجز بعد.',
+    },
+    {
+      ...common,
+      id: 'r-budget',
+      tenantId: 'rimal',
+      sourceEvent: 'evt_0009',
+      title: 'LED screen · above SAR 9,000 budget',
+      customer: 'LED screen enquiry',
+      channel: 'Email',
+      language: 'Mixed',
+      receivedAt: '2026-11-02T09:00:00+03:00',
+      body: 'We need a 4 × 3 m LED screen for two event days and 2 wireless mics in Riyadh. Our total budget is SAR 9,000. شكرًا',
+      extracted: [
+        { label: 'Screen', value: '4 × 3 m = 12 m² · 2 days' },
+        { label: 'Microphones', value: '2 wireless mics · 2 days' },
+        { label: 'Budget', value: 'SAR 9,000 total' },
+      ],
+      missing: ['Event dates', 'Delivery / collection trips'],
+      reasons: [
+        {
+          title: 'Estimate exceeds the customer budget',
+          detail:
+            'SAR 12,604 including VAT is SAR 3,604 above budget, before delivery. No discount is assumed.',
+          source: 'evt_0009 · R-LED-001 · R-MIC-001',
+        },
+        {
+          title: 'Crew required',
+          detail: 'A 12 m² screen exceeds 6 m²; include one setup crew shift.',
+          source: 'Rimal crew policy · R-CRW-001',
+        },
+      ],
+      quote: {
+        currency: 'SAR',
+        vatPercent: 15,
+        lines: [
+          {
+            sku: 'R-LED-001',
+            label: 'LED screen P3.9',
+            unitPriceMinor: 35000,
+            quantity: 12,
+            periods: 2,
+            unit: 'm² / day',
+            lineTotalMinor: 840000,
+          },
+          {
+            sku: 'R-MIC-001',
+            label: 'Wireless microphone',
+            unitPriceMinor: 9000,
+            quantity: 2,
+            periods: 2,
+            unit: 'mic / day',
+            lineTotalMinor: 36000,
+          },
+          {
+            sku: 'R-CRW-001',
+            label: 'Setup crew · 4 people, 8 hours',
+            unitPriceMinor: 220000,
+            quantity: 1,
+            periods: 1,
+            unit: 'shift / order',
+            lineTotalMinor: 220000,
+          },
+        ],
+        subtotalMinor: 1096000,
+        discountMinor: 0,
+        vatMinor: 164400,
+        totalMinor: 1260400,
+        complete: false,
+        note: 'Delivery excluded. The sample assumes one crew shift for the order; operations must confirm requirements.',
+      },
+      draftReply:
+        'شكرًا لتواصلكم. التقدير للشاشة ٤×٣ متر لمدة يومين مع ميكروفونين وطاقم تجهيز هو \u2066SAR 12,604\u2069 شامل الضريبة، قبل التوصيل، وهو أعلى من ميزانيتكم البالغة \u2066SAR 9,000\u2069. هل تناسبكم مراجعة حجم الشاشة أو مدة الإيجار؟ نحتاج أيضًا تاريخ الفعالية لمراجعة التوفر.',
+    },
+  ],
+});

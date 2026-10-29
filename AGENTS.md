@@ -33,7 +33,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 - The contract is Elysia schemas -> `apps/api/openapi.json` -> Hey API -> `apps/web/src/api/` -> TanStack Query. Use OpenAPI and Hey API; do not replace them with Eden or tRPC.
 - The OpenAPI specification is tracked; generated client files are ignored. Do not edit generated files or duplicate their DTOs by hand.
 - Use generated SDK calls and query/mutation helpers for frontend API access. Keep runtime client configuration outside the generated directory.
-- Use shadcn components, their defaults, and built-in variants. Preserve the current Radix Nova preset and default theme. Layout, accessibility, Arabic direction, and mixed-direction text handling are functional work; do not redesign the UI or restyle the component library.
+- Use shadcn components and built-in variants. Preserve the user-selected preset `b7BFf3k1o`: Radix Nova, Mist base and charts, Teal theme, Inter font, Lucide icons, default radius, subtle menu accent and default menu color. Semantic status colors remain amber pending, green approved, red rejected and blue handoff. Keep colors in theme tokens and badge variants; do not add one-off overrides or redesign the component library. Layout, accessibility, Arabic direction, and mixed-direction text handling are functional work.
 
 ## Domain invariants
 
@@ -49,7 +49,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## Validation and evidence
 
-Run the checks relevant to the change. `bun run check` currently runs lint, TypeScript checks, and builds. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
+Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API tests, and builds. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
 
 For API changes, regenerate the contract with `bun run api:generate`, inspect the spec, and exercise affected routes including rejection behavior. For UI behavior, verify the result in a browser. For database/concurrency changes, exercise real Postgres constraints, transactions, and the restricted application role.
 

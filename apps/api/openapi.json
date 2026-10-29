@@ -6,6 +6,1050 @@
   },
   "openapi": "3.1.2",
   "paths": {
+    "/demo/workspace": {
+      "get": {
+        "operationId": "getDemoWorkspace",
+        "tags": [
+          "demo"
+        ],
+        "summary": "Sample businesses and approvers (no authentication)",
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "tenants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "qamar",
+                              "rimal"
+                            ]
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "shortName": {
+                            "type": "string"
+                          },
+                          "location": {
+                            "type": "string"
+                          },
+                          "timezone": {
+                            "type": "string"
+                          },
+                          "currency": {
+                            "type": "string",
+                            "enum": [
+                              "AED",
+                              "SAR"
+                            ]
+                          },
+                          "trust": {
+                            "type": "string",
+                            "const": "supervised"
+                          },
+                          "autoSend": {
+                            "type": "string",
+                            "enum": [
+                              "low_risk_only",
+                              "off"
+                            ]
+                          },
+                          "approvers": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "role": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "name",
+                                "role"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "shortName",
+                          "location",
+                          "timezone",
+                          "currency",
+                          "trust",
+                          "autoSend",
+                          "approvers"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "tenants"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/tenants/{tenantId}/inbox": {
+      "get": {
+        "operationId": "getDemoInbox",
+        "tags": [
+          "demo"
+        ],
+        "summary": "Hand-authored inbox scenarios",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "enum": [
+                              "qamar",
+                              "rimal"
+                            ]
+                          },
+                          "sourceEvent": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "customer": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "WhatsApp",
+                              "Email",
+                              "Web form"
+                            ]
+                          },
+                          "language": {
+                            "type": "string",
+                            "enum": [
+                              "Arabic",
+                              "English",
+                              "Mixed"
+                            ]
+                          },
+                          "receivedAt": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "context": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string"
+                                },
+                                "body": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "body"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "extracted": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "missing": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "reasons": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string"
+                                },
+                                "detail": {
+                                  "type": "string"
+                                },
+                                "source": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "detail",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "quote": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "AED",
+                                  "SAR"
+                                ]
+                              },
+                              "vatPercent": {
+                                "type": "number"
+                              },
+                              "lines": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "sku": {
+                                      "type": "string"
+                                    },
+                                    "label": {
+                                      "type": "string"
+                                    },
+                                    "unitPriceMinor": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    "quantity": {
+                                      "type": "number",
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "periods": {
+                                      "type": "number",
+                                      "exclusiveMinimum": 0
+                                    },
+                                    "unit": {
+                                      "type": "string"
+                                    },
+                                    "lineTotalMinor": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "sku",
+                                    "label",
+                                    "unitPriceMinor",
+                                    "quantity",
+                                    "periods",
+                                    "unit",
+                                    "lineTotalMinor"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "subtotalMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "discountMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "vatMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "totalMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "complete": {
+                                "type": "boolean"
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "currency",
+                              "vatPercent",
+                              "lines",
+                              "subtotalMinor",
+                              "discountMinor",
+                              "vatMinor",
+                              "totalMinor",
+                              "complete",
+                              "note"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "draftReply": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "needs_approval",
+                              "approved",
+                              "rejected",
+                              "handed_off",
+                              "superseded"
+                            ]
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "recommendedAction": {
+                            "type": "string",
+                            "enum": [
+                              "approve",
+                              "reject",
+                              "hand_off"
+                            ]
+                          },
+                          "supersededBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "decision": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "enum": [
+                                  "approve",
+                                  "reject",
+                                  "hand_off"
+                                ]
+                              },
+                              "approverName": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string"
+                              },
+                              "originalReply": {
+                                "type": "string"
+                              },
+                              "reply": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "action",
+                              "approverName",
+                              "at",
+                              "originalReply",
+                              "reply",
+                              "reason"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tenantId",
+                          "sourceEvent",
+                          "title",
+                          "customer",
+                          "channel",
+                          "language",
+                          "receivedAt",
+                          "body",
+                          "context",
+                          "extracted",
+                          "missing",
+                          "reasons",
+                          "quote",
+                          "draftReply",
+                          "status",
+                          "revision",
+                          "recommendedAction",
+                          "supersededBy",
+                          "decision"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demo/tenants/{tenantId}/inbox/{id}/review": {
+      "post": {
+        "operationId": "reviewDemoDraft",
+        "tags": [
+          "demo"
+        ],
+        "summary": "Simulate a review decision in memory; never sends a reply",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "hand_off"
+                    ]
+                  },
+                  "reply": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "revision",
+                  "action",
+                  "reply",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "hand_off"
+                    ]
+                  },
+                  "reply": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "revision",
+                  "action",
+                  "reply",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "hand_off"
+                    ]
+                  },
+                  "reply": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "revision",
+                  "action",
+                  "reply",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "enum": [
+                        "qamar",
+                        "rimal"
+                      ]
+                    },
+                    "sourceEvent": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "customer": {
+                      "type": "string"
+                    },
+                    "channel": {
+                      "type": "string",
+                      "enum": [
+                        "WhatsApp",
+                        "Email",
+                        "Web form"
+                      ]
+                    },
+                    "language": {
+                      "type": "string",
+                      "enum": [
+                        "Arabic",
+                        "English",
+                        "Mixed"
+                      ]
+                    },
+                    "receivedAt": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "context": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "body"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "extracted": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "value"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "missing": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "reasons": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string"
+                          },
+                          "detail": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "detail",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "quote": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "AED",
+                            "SAR"
+                          ]
+                        },
+                        "vatPercent": {
+                          "type": "number"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "sku": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "unitPriceMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "quantity": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "periods": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "lineTotalMinor": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "sku",
+                              "label",
+                              "unitPriceMinor",
+                              "quantity",
+                              "periods",
+                              "unit",
+                              "lineTotalMinor"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "subtotalMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "discountMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "vatMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "totalMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "complete": {
+                          "type": "boolean"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "currency",
+                        "vatPercent",
+                        "lines",
+                        "subtotalMinor",
+                        "discountMinor",
+                        "vatMinor",
+                        "totalMinor",
+                        "complete",
+                        "note"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "draftReply": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "needs_approval",
+                        "approved",
+                        "rejected",
+                        "handed_off",
+                        "superseded"
+                      ]
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "recommendedAction": {
+                      "type": "string",
+                      "enum": [
+                        "approve",
+                        "reject",
+                        "hand_off"
+                      ]
+                    },
+                    "supersededBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "decision": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "approve",
+                            "reject",
+                            "hand_off"
+                          ]
+                        },
+                        "approverName": {
+                          "type": "string"
+                        },
+                        "at": {
+                          "type": "string"
+                        },
+                        "originalReply": {
+                          "type": "string"
+                        },
+                        "reply": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "approverName",
+                        "at",
+                        "originalReply",
+                        "reply",
+                        "reason"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "tenantId",
+                    "sourceEvent",
+                    "title",
+                    "customer",
+                    "channel",
+                    "language",
+                    "receivedAt",
+                    "body",
+                    "context",
+                    "extracted",
+                    "missing",
+                    "reasons",
+                    "quote",
+                    "draftReply",
+                    "status",
+                    "revision",
+                    "recommendedAction",
+                    "supersededBy",
+                    "decision"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Response for status 400",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "operationId": "getHealth",

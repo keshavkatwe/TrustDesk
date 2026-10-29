@@ -1,10 +1,10 @@
 # TrustDesk design
 
-Status: working design, 29 October 2026. Only the boilerplate is implemented. Decisions marked **proposed** need implementation and measured evidence before they become claims about the system. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed).
+Status: working design, 29 October 2026. The workspace and a fixture-backed inbox UI are implemented. Decisions marked **proposed** need implementation and measured evidence before they become claims about the system. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed).
 
 ## Architecture and trust boundaries
 
-Bun + Turborepo runs a Vite/React web app, Elysia API, and worker. PostgreSQL/Drizzle belongs in `packages/db`; shared backend services, including AI, belong in `packages/core`. Zod defines application schemas and inferred types. HTTP contracts use Elysia/Zod -> OpenAPI -> Hey API -> TanStack Query, with Zod's JSON Schema conversion registered in the OpenAPI plugin. LLM output will also use Zod and the official OpenAI SDK; model selection remains open until evaluated. UI uses stock shadcn defaults.
+Bun + Turborepo runs a Vite/React web app, Elysia API, and worker. PostgreSQL/Drizzle belongs in `packages/db`; shared backend services, including AI, belong in `packages/core`. Zod defines application schemas and inferred types. HTTP contracts use Elysia/Zod -> OpenAPI -> Hey API -> TanStack Query, with Zod's JSON Schema conversion registered in the OpenAPI plugin. LLM output will also use Zod and the official OpenAI SDK; model selection remains open until evaluated. UI uses the user's shadcn preset `b7BFf3k1o`: Radix Nova, Mist base/charts, Teal theme and Inter font, with semantic status badges.
 
 ```text
 Untrusted channel payload
@@ -19,6 +19,14 @@ Owner UI -> API -> tenant/revision checks -> core services -> Postgres
 ```
 
 Tenant data crosses the model-provider boundary only in that tenant's request. Business-owned records, citations, logs, and views remain tenant-scoped. Receiving-channel identity is distinct from the hard-coded demo approver identity.
+
+## Current UI prototype
+
+The user chose UI first: stock shadcn shell, business switcher, inbox search/status filters and a review panel. Six hand-authored scenarios cover both businesses, Arabic/mixed text, corrected quantities, discounts, outside-area handoff, required crew and budget overrun. Quote rows, extraction and hold reasons are illustrative fixtures, not inference or policy-engine output. Some seed messages are condensed and display times are illustrative.
+
+UI review changes: business switching lives in the sidebar footer; the header Sample badge, officer-status section and sample banner were removed at the user's request. Fixture disclosure remains beside drafts, decisions and quote evidence. The user selected [preset b7BFf3k1o](https://ui.shadcn.com/create?preset=b7BFf3k1o), replacing the earlier Blue/Geist choice with Mist/Teal/Inter. Semantic badge variants remain amber for pending, green for approved, red for rejected and blue for handoff. Component geometry stays Radix Nova.
+
+The `/demo` API uses Zod/OpenAPI/Hey API. App-local memory records approve/reject/handoff decisions, named reviewers, original/edited replies and revision conflicts. It rejects cross-business message/approver IDs and superseded drafts. Restarting the API resets all decisions. The approver picker is simulated identity, not authentication; these checks do not prove database isolation or distributed concurrency safety. There is no dispatch, outbox, LLM call or durable record. Edits are not commercially revalidated yet. Quality & Trust, Activity and Settings remain visibly disabled. Tenant changes reset UI selection, filters, edits and reviewer identity.
 
 ## Planned flow and data model
 
@@ -69,4 +77,4 @@ Proposed depth: **A, failure handling**, and **B, isolation**. A adds bounded ba
 
 At 200 tenants/50,000 messages a day, inspect inference concurrency, provider limits, tenant fairness and database/queue pool contention first. Bound each tenant's in-flight jobs and spend, separate worker capacity, index tenant/status/time access paths, and retain aggregate metrics while archiving large run payloads.
 
-Current: workspace, health endpoint, stock UI, spec export/client generation, lint/typechecks/builds. Next stages: database/seeds; receive/queue/dedupe; draft/pricing/policy; approval/outbox/trails; evals/trust/depth. Keep a complete thin spine before optional depth. Cut live integrations, production auth/deployment and cosmetic work. Submission docs remain short: README, this design (target <=3 pages), handler review, AI log, six-week team plan, and an 8–12 minute walkthrough. No production-readiness or measured-quality claim is made yet.
+Current: workspace, health endpoint, user-reviewed fixture-backed inbox/review UI, spec/client generation, API fixture tests and lint/typechecks/builds. Next: database/seeds; receive/queue/dedupe; draft/pricing/policy; durable approval/outbox/trails; evals/trust/depth. Keep a complete thin spine before optional depth. Cut live integrations, production auth/deployment and cosmetic work. Submission docs remain short: README, this design (target <=3 pages), handler review, AI log, six-week team plan, and an 8–12 minute walkthrough. No production-readiness or measured-quality claim is made yet.
