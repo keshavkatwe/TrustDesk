@@ -1,10 +1,11 @@
 import { cors } from '@elysiajs/cors';
 import { openapi } from '@elysiajs/openapi';
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
+import { z } from 'zod';
 
-const Health = t.Object({
-  status: t.Literal('ok'),
-  service: t.Literal('trustdesk-api'),
+const Health = z.object({
+  status: z.literal('ok'),
+  service: z.literal('trustdesk-api'),
 });
 
 // Keep construction separate from listening so spec export needs no running services.
@@ -14,6 +15,7 @@ export function createApp() {
     .use(
       openapi({
         path: '/openapi',
+        mapJsonSchema: { zod: z.toJSONSchema },
         documentation: {
           info: { title: 'TrustDesk API', version: '0.0.0' },
         },

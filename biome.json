@@ -11,6 +11,7 @@
       "!**/dist",
       "!**/node_modules",
       "!**/.turbo",
+      "!.agents/skills",
       "!apps/web/src/api",
       "!apps/api/openapi.json"
     ]

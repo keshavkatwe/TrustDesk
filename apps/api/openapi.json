@@ -19,21 +19,23 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
                   "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "ok"
+                    },
+                    "service": {
+                      "type": "string",
+                      "const": "trustdesk-api"
+                    }
+                  },
                   "required": [
                     "status",
                     "service"
                   ],
-                  "properties": {
-                    "status": {
-                      "const": "ok",
-                      "type": "string"
-                    },
-                    "service": {
-                      "const": "trustdesk-api",
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }

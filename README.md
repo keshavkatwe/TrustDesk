@@ -2,6 +2,13 @@
 
 The initial Turborepo workspace for the Trust Desk engineering challenge. This step sets up the project foundation; it does not implement the message pipeline yet.
 
+## Project guidance
+
+- [AGENTS.md](AGENTS.md): instructions, package boundaries, workflow and safety invariants.
+- [DESIGN.md](DESIGN.md): engineering design, assumptions, threat model and implementation status.
+- [AI-LOG.md](AI-LOG.md): actual AI mistakes, decisions and verification evidence.
+- [Project skills](docs/SKILLS.md): relevant skills, pinned sources and version limits.
+
 ## Start
 
 Requires Bun 1.3.14. From the repository root:
@@ -35,7 +42,7 @@ The database and core packages export TypeScript source directly. Their code is 
 
 ## API contract
 
-Elysia route schemas generate `apps/api/openapi.json`. Hey API generates the typed SDK and TanStack Query helpers in `apps/web/src/api/`.
+Elysia routes use Zod for request/response validation. The OpenAPI plugin converts those schemas with `z.toJSONSchema` to generate `apps/api/openapi.json`. Hey API generates the typed SDK and TanStack Query helpers in `apps/web/src/api/`.
 
 The spec belongs in Git; the generated client is ignored. Turbo automatically exports the spec and generates the client before web development, typechecking, and builds. The spec exporter does not start a server or require a database.
 
