@@ -2,12 +2,8 @@ import { cors } from '@elysiajs/cors';
 import { openapi } from '@elysiajs/openapi';
 import { Elysia } from 'elysia';
 import { z } from 'zod';
-import { demoRoutes } from './demo/routes.ts';
-
-const Health = z.object({
-  status: z.literal('ok'),
-  service: z.literal('trustdesk-api'),
-});
+import { createDemoModule } from './modules/demo/index.ts';
+import { health } from './modules/health/index.ts';
 
 // Keep construction separate from listening so spec export needs no running services.
 export function createApp() {
@@ -22,13 +18,6 @@ export function createApp() {
         },
       }),
     )
-    .use(demoRoutes())
-    .get('/healthz', () => ({ status: 'ok', service: 'trustdesk-api' }) as const, {
-      response: { 200: Health },
-      detail: {
-        operationId: 'getHealth',
-        tags: ['system'],
-        summary: 'API liveness',
-      },
-    });
+    .use(createDemoModule())
+    .use(health);
 }

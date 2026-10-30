@@ -27,6 +27,8 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## API and frontend conventions
 
+- Follow [Elysia's best practices](https://elysiajs.com/essential/best-practice.html) with feature modules under `apps/api/src/modules/<feature>/`: `index.ts` is an Elysia controller, `model.ts` contains Zod HTTP schemas, and `service.ts` contains feature-local logic when needed. Keep tests beside their module. An Elysia instance is the controller; use inline handlers and pass only extracted values to services, never the full `Context`.
+- Keep shared business logic in `packages/core/src/<feature>/`, independent of Elysia and HTTP status objects. Controllers map service outcomes to HTTP responses. Request-dependent helpers may be Elysia plugins with explicit `.use()` dependencies; do not decorate the API with ordinary business services. Do not add empty service files or wrappers that merely forward to core. Stateful fixture modules use factories so each `createApp()` gets independent state.
 - Use Zod for application schemas: HTTP contracts, configuration, core inputs, and structured LLM outputs. Derive TypeScript types with `z.infer` rather than maintaining duplicate interfaces.
 - Elysia routes declare Zod request schemas, success/error response schemas, and stable `detail.operationId` values. Map Zod schemas to OpenAPI with `mapJsonSchema: { zod: z.toJSONSchema }`.
 - Follow `apps/api/src/app.ts` and `openapi-export.ts`: constructing/exporting the app must not require a database, an OpenAI key, or a listening server.

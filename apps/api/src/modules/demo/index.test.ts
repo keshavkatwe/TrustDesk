@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createApp } from '../app.ts';
+import { createApp } from '../../app.ts';
 import { fixtures } from './fixtures.ts';
 import { DemoError, Inbox, InboxItem } from './model.ts';
 

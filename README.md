@@ -34,7 +34,7 @@ No database or API key is needed for this prototype. The worker is a placeholder
 
 Six hand-authored scenarios are based on challenge seed events `evt_0001/0002/0003/0005/0008/0009`. Some messages are condensed and display times are illustrative. Quote arithmetic uses sample catalogue values, not a pricing service. No OpenAI calls, evaluation scores, channel delivery or authentication run. The approver picker is a demo identity selector. Changes are shared by browsers connected to the same API process and reset when that process restarts. Reply edits are local until a decision is recorded; navigating to another message discards unreviewed edits.
 
-The fixture adapter lives in `apps/api/src/demo/` and uses the generated API client. It will be replaced with durable services in `packages/core` and `packages/db`. In-memory checks do not establish production isolation or concurrency guarantees. Quality & Trust, Activity and Settings are reserved for later steps.
+The fixture adapter lives in `apps/api/src/modules/demo/` and uses the generated API client. It will be replaced with durable services in `packages/core` and `packages/db`. In-memory checks do not establish production isolation or concurrency guarantees. Quality & Trust, Activity and Settings are reserved for later steps.
 
 ## Workspace
 
@@ -73,6 +73,29 @@ Business changes reset the reviewer, filters, selection and unsaved edits. Messa
 Date formatting uses date-fns and `@date-fns/tz` through `libs/date.ts`. API timestamps retain their offsets and are displayed in the business's timezone (Dubai or Riyadh), regardless of the reviewer's computer timezone. A production static host must serve `index.html` for client routes; Vite already provides this fallback locally.
 
 ## API contract
+
+The API follows [Elysia's feature-module guidance](https://elysiajs.com/essential/best-practice.html):
+
+```text
+apps/api/src/
+  index.ts                  Listening process and shutdown
+  app.ts                    App factory, plugins and module composition
+  openapi-export.ts         Spec export without a listening server
+  modules/
+    health/
+      index.ts              Elysia controller
+      model.ts              Zod response schema
+    demo/
+      index.ts              Elysia controller and HTTP outcome mapping
+      model.ts              Zod request/response schemas and inferred types
+      service.ts            App-local fixture behavior, independent of Elysia
+      fixtures.ts           Synthetic scenario data
+      index.test.ts         HTTP behavior tests through app.handle()
+```
+
+Controllers use inline handlers, destructure request values and call services without passing Elysia's `Context`. The demo controller maps service error codes to HTTP statuses. Its factory gives every app instance independent mutable fixture state. Stateless modules such as health need no service file.
+
+Shared business services will live in `packages/core/src/<feature>/`, where API and worker can both call them; database schema and access remain in `packages/db`. Add feature-local services or request-dependent Elysia plugins only when needed, without duplicating core logic or adding forwarding wrappers. The guide's TypeBox examples are adapted to our agreed Zod contracts.
 
 Elysia routes use Zod for request/response validation. The OpenAPI plugin converts those schemas with `z.toJSONSchema` to generate `apps/api/openapi.json`. Hey API generates the typed SDK and TanStack Query helpers in `apps/web/src/api/`.
 

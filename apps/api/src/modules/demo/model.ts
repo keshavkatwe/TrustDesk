@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 export const TenantId = z.enum(['qamar', 'rimal']);
+export const InboxParams = z.object({ tenantId: TenantId });
+export const ReviewParams = InboxParams.extend({ id: z.string().min(1) });
 export const Tenant = z.object({
   id: TenantId,
   name: z.string(),

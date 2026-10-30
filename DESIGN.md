@@ -1,6 +1,6 @@
 # TrustDesk design
 
-Status: working design, 29 October 2026. The workspace and a fixture-backed inbox UI are implemented. Decisions marked **proposed** need implementation and measured evidence before they become claims about the system. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed).
+Status: working design, 30 October 2026. The workspace and a fixture-backed inbox UI are implemented. Decisions marked **proposed** need implementation and measured evidence before they become claims about the system. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed).
 
 ## Architecture and trust boundaries
 
@@ -19,6 +19,8 @@ Owner UI -> API -> tenant/revision checks -> core services -> Postgres
 ```
 
 Tenant data crosses the model-provider boundary only in that tenant's request. Business-owned records, citations, logs, and views remain tenant-scoped. Receiving-channel identity is distinct from the hard-coded demo approver identity.
+
+API structure follows Elysia's feature-module guidance: `modules/<feature>/index.ts` controllers, Zod `model.ts` contracts and optional feature-local `service.ts` logic. Inline handlers extract inputs and map outcomes to HTTP responses. Shared business services stay in `packages/core`, without Elysia context or HTTP status dependencies; `app.ts` composes modules and `index.ts` owns listening. The disposable demo service remains local to its module until durable core services replace it.
 
 ## Current UI prototype
 

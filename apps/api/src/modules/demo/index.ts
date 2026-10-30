@@ -1,10 +1,25 @@
 import { Elysia } from 'elysia';
-import { z } from 'zod';
-import { DemoError, Inbox, InboxItem, ReviewInput, TenantId, Workspace } from './model.ts';
-import { createDemoStore } from './store.ts';
+import {
+  DemoError,
+  Inbox,
+  InboxItem,
+  InboxParams,
+  ReviewInput,
+  ReviewParams,
+  Workspace,
+} from './model.ts';
+import { createDemoService } from './service.ts';
 
-export function demoRoutes() {
-  const demo = createDemoStore();
+const reviewErrorStatus = {
+  message_not_found: 404,
+  invalid_approver: 400,
+  stale_draft: 409,
+  reason_required: 400,
+} as const;
+
+export function createDemoModule() {
+  // Allocate fixture state per app, rather than sharing mutable state at import time.
+  const demo = createDemoService();
   return new Elysia({ name: 'demo', prefix: '/demo' })
     .onError(({ code, status }) => {
       if (code === 'VALIDATION')
@@ -19,7 +34,7 @@ export function demoRoutes() {
       },
     })
     .get('/tenants/:tenantId/inbox', ({ params }) => demo.inbox(params.tenantId), {
-      params: z.object({ tenantId: TenantId }),
+      params: InboxParams,
       response: { 200: Inbox, 422: DemoError },
       detail: {
         operationId: 'getDemoInbox',
@@ -31,11 +46,11 @@ export function demoRoutes() {
       '/tenants/:tenantId/inbox/:id/review',
       ({ params, body, status }) => {
         const result = demo.review(params.tenantId, params.id, body);
-        if (result.status !== 200) return status(result.status, { message: result.message });
+        if (!result.ok) return status(reviewErrorStatus[result.code], { message: result.message });
         return result.item;
       },
       {
-        params: z.object({ tenantId: TenantId, id: z.string().min(1) }),
+        params: ReviewParams,
         body: ReviewInput,
         response: {
           200: InboxItem,
