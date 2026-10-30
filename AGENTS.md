@@ -18,7 +18,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 - Bun workspaces and Turborepo; use the Bun version pinned in root `package.json` and keep `bun.lock` current.
 - `apps/api`: Elysia 1.x HTTP routes, Zod request/response validation, OpenAPI export. Keep routes thin and `.listen()` in the process entry point.
-- `apps/web`: React + Vite, Tailwind, stock shadcn/ui, TanStack Query, generated Hey API client.
+- `apps/web`: React + Vite, React Router, Tailwind, stock shadcn/ui, TanStack Query, generated Hey API client, date-fns.
 - `apps/worker`: pg-boss consumers and worker lifecycle. Queue integration is planned, not implemented yet.
 - `packages/db`: PostgreSQL connection, Drizzle schema, migrations, and tenant-scoped database access. Currently a placeholder.
 - `packages/core`: business services shared by API and worker. AI, pricing, policy, approvals, and trust belong in modules here. Currently a placeholder.
@@ -33,6 +33,9 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 - The contract is Elysia schemas -> `apps/api/openapi.json` -> Hey API -> `apps/web/src/api/` -> TanStack Query. Use OpenAPI and Hey API; do not replace them with Eden or tRPC.
 - The OpenAPI specification is tracked; generated client files are ignored. Do not edit generated files or duplicate their DTOs by hand.
 - Use generated SDK calls and query/mutation helpers for frontend API access. Keep runtime client configuration outside the generated directory.
+- Web structure: `components/ui` holds stock shadcn primitives; other `components` are reusable, prop-driven presentation. `widgets` compose components and coordinate data/interactions; `pages` are route entry points; `hooks` hold reusable behavior; `libs` holds non-React helpers; `types` holds aliases derived from generated contracts. Group by domain within these folders as needed. Avoid empty folders and pass-through abstractions.
+- Define web routes in `src/routes/index.tsx` and URL builders in `src/routes/paths.ts`. Keep business pages under `/businesses/:tenantId`, validate the ID against workspace data, and obtain the resolved business from the shared layout. Key business-specific widgets by tenant ID so switching businesses resets reviewer, filters and unsaved edits. The URL is navigation state, not authorization.
+- Use date-fns through `src/libs/date.ts`, with `@date-fns/tz` for the business timezone. Keep API instants in offset-bearing ISO form; do not format business timestamps using the reviewer's system timezone.
 - Use shadcn components and built-in variants. Preserve the user-selected preset `b7BFf3k1o`: Radix Nova, Mist base and charts, Teal theme, Inter font, Lucide icons, default radius, subtle menu accent and default menu color. Semantic status colors remain amber pending, green approved, red rejected and blue handoff. Keep colors in theme tokens and badge variants; do not add one-off overrides or redesign the component library. Layout, accessibility, Arabic direction, and mixed-direction text handling are functional work.
 
 ## Domain invariants
@@ -49,7 +52,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## Validation and evidence
 
-Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API tests, and builds. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
+Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API and business-date tests, and builds. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
 
 For API changes, regenerate the contract with `bun run api:generate`, inspect the spec, and exercise affected routes including rejection behavior. For UI behavior, verify the result in a browser. For database/concurrency changes, exercise real Postgres constraints, transactions, and the restricted application role.
 

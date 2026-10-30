@@ -15,7 +15,7 @@
     "format": "biome format --write .",
     "openapi:export": "bun scripts/with-env.ts turbo run openapi:export",
     "api:generate": "bun scripts/with-env.ts turbo run api:generate",
-    "test": "bun test apps/api/src",
+    "test": "bun test apps/api/src apps/web/src/libs",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build"
   },
   "devDependencies": {

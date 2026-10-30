@@ -5,6 +5,7 @@ import {
   ShieldCheckIcon,
   SquareCheckIcon,
 } from 'lucide-react';
+import { NavLink, useMatch } from 'react-router';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
   Select,
@@ -29,7 +30,8 @@ import {
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
-import type { Tenant } from '@/features/inbox/types';
+import { paths, routePatterns } from '@/routes/paths';
+import type { Tenant } from '@/types/api';
 
 export function AppSidebar({
   tenants,
@@ -41,6 +43,7 @@ export function AppSidebar({
   onTenantChange: (id: Tenant['id']) => void;
 }) {
   const { setOpenMobile } = useSidebar();
+  const isInbox = useMatch(routePatterns.inbox);
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -55,13 +58,11 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive
-                  aria-current="page"
-                  onClick={() => setOpenMobile(false)}
-                >
-                  <InboxIcon />
-                  <span>Inbox</span>
+                <SidebarMenuButton asChild isActive={Boolean(isInbox)}>
+                  <NavLink to={paths.inbox(tenant.id)} onClick={() => setOpenMobile(false)}>
+                    <InboxIcon />
+                    <span>Inbox</span>
+                  </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {[

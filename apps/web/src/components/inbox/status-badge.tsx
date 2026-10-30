@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { type InboxItem, statuses } from './types';
+import { statuses } from '@/libs/inbox';
+import type { InboxItem } from '@/types/api';
 
 const variants: Record<InboxItem['status'], ComponentProps<typeof Badge>['variant']> = {
   needs_approval: 'warning',

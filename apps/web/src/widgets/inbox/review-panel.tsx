@@ -3,6 +3,9 @@ import { CheckIcon, CornerUpRightIcon, PencilIcon, ShieldAlertIcon, XIcon } from
 import { useState } from 'react';
 import { getDemoInboxQueryKey, reviewDemoDraftMutation } from '@/api/@tanstack/react-query.gen';
 import type { GetDemoInboxResponse } from '@/api/types.gen';
+import { QuoteBreakdown } from '@/components/inbox/quote-breakdown';
+import { ReplyDiff } from '@/components/inbox/reply-diff';
+import { StatusBadge } from '@/components/inbox/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,18 +28,10 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { StatusBadge } from './status-badge';
-import { type Action, type InboxItem, money, statuses, type Tenant, timestamp } from './types';
+import { formatTimestamp } from '@/libs/date';
+import { statuses } from '@/libs/inbox';
+import type { Action, InboxItem, Tenant } from '@/types/api';
 
 const actionLabels: Record<Action, string> = {
   approve: 'Approve reply',
@@ -104,7 +99,9 @@ export function ReviewPanel({
         <h2 className="text-lg font-semibold">{item.title}</h2>
         <p className="break-all text-sm text-muted-foreground">
           <bdi>{item.customer}</bdi> · {item.channel} · {item.language} ·{' '}
-          <time dateTime={item.receivedAt}>{timestamp(item.receivedAt, tenant.timezone)}</time>
+          <time dateTime={item.receivedAt}>
+            {formatTimestamp(item.receivedAt, tenant.timezone)}
+          </time>
         </p>
       </div>
       {outsideFilter && (
@@ -154,7 +151,7 @@ export function ReviewPanel({
           <CheckIcon />
           <AlertTitle>Sample decision recorded · {statuses[item.status]}</AlertTitle>
           <AlertDescription>
-            {item.decision.approverName} · {timestamp(item.decision.at, tenant.timezone)}.{' '}
+            {item.decision.approverName} · {formatTimestamp(item.decision.at, tenant.timezone)}.{' '}
             {item.status === 'approved'
               ? 'The reply has not been sent.'
               : 'No customer message was sent.'}
@@ -433,120 +430,6 @@ export function ReviewPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function QuoteBreakdown({ quote }: { quote: NonNullable<InboxItem['quote']> }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <h3>Quote breakdown</h3>
-        </CardTitle>
-        <CardDescription>
-          Sample catalogue amounts · {quote.currency} · {quote.vatPercent}% VAT
-        </CardDescription>
-        <CardAction>
-          <Badge variant={quote.complete ? 'success' : 'warning'}>
-            {quote.complete ? 'Complete' : 'Partial estimate'}
-          </Badge>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <Table>
-          <TableCaption>
-            Seed catalogue v1.2. Amounts below are hand-authored fixtures.
-          </TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Catalogue row</TableHead>
-              <TableHead>Rate</TableHead>
-              <TableHead>Qty × periods</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {quote.lines.map((line) => (
-              <TableRow key={line.sku}>
-                <TableCell>
-                  <span className="block">{line.label}</span>
-                  <span className="text-xs text-muted-foreground">
-                    <bdi>{line.sku}</bdi>
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <bdi>{money(line.unitPriceMinor, quote.currency)}</bdi>
-                  <span className="block text-xs text-muted-foreground">{line.unit}</span>
-                </TableCell>
-                <TableCell>
-                  <bdi>
-                    {line.quantity} × {line.periods}
-                  </bdi>
-                </TableCell>
-                <TableCell className="text-right">
-                  <bdi>{money(line.lineTotalMinor, quote.currency)}</bdi>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <dl className="ml-auto flex w-full max-w-xs flex-col gap-2 text-sm">
-          {[
-            ['Subtotal', quote.subtotalMinor],
-            ['Discount', -quote.discountMinor],
-            [`VAT (${quote.vatPercent}%)`, quote.vatMinor],
-            ['Total including VAT', quote.totalMinor],
-          ].map(([label, value]) => (
-            <div key={label} className="flex justify-between gap-4">
-              <dt>{label}</dt>
-              <dd>
-                <bdi>{money(Number(value), quote.currency)}</bdi>
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <Alert>
-          <AlertTitle>Check exclusions before quoting</AlertTitle>
-          <AlertDescription>{quote.note}</AlertDescription>
-        </Alert>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ReplyDiff({ before: beforeText, after: afterText }: { before: string; after: string }) {
-  // Highlight the changed span while keeping both full replies readable, including Arabic.
-  const before = Array.from(beforeText);
-  const after = Array.from(afterText);
-  let start = 0;
-  while (start < before.length && start < after.length && before[start] === after[start]) start++;
-  let end = 0;
-  while (
-    end < before.length - start &&
-    end < after.length - start &&
-    before[before.length - end - 1] === after[after.length - end - 1]
-  )
-    end++;
-  return (
-    <div className="flex flex-col gap-4 text-sm">
-      <div className="flex flex-col gap-2">
-        <p className="font-medium">Original draft</p>
-        <p dir="auto" className="whitespace-pre-wrap leading-relaxed">
-          {before.slice(0, start).join('')}
-          <del>{before.slice(start, before.length - end).join('')}</del>
-          {before.slice(before.length - end).join('')}
-        </p>
-      </div>
-      <Separator />
-      <div className="flex flex-col gap-2">
-        <p className="font-medium">Edited reply</p>
-        <p dir="auto" className="whitespace-pre-wrap leading-relaxed">
-          {after.slice(0, start).join('')}
-          <ins>{after.slice(start, after.length - end).join('')}</ins>
-          {after.slice(after.length - end).join('')}
-        </p>
-      </div>
     </div>
   );
 }

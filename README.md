@@ -26,7 +26,7 @@ No database or API key is needed for this prototype. The worker is a placeholder
 
 ## Try the inbox
 
-1. Open the web app. The inbox defaults to **Needs approval**.
+1. Open the web app. `/` redirects to the first business inbox, currently `/businesses/qamar/inbox`. The inbox defaults to **Needs approval**.
 2. Choose a business from the bottom-left sidebar selector and a named approver from the header. On narrow screens, open the sidebar to change businesses.
 3. Select a message, inspect the original request, quote and evidence, then edit or review the reply. Approval shows the original/edited wording before confirmation.
 4. Approve, reject or hand off a draft. Rejection and handoff require a reason. **Approved does not mean sent**; all actions are simulations.
@@ -52,6 +52,26 @@ scripts/
 
 The database and core packages export TypeScript source directly. Their code is bundled by the applications that use them. AI and shared utilities will be modules inside `core`, rather than separate workspace packages.
 
+## Web structure and routes
+
+```text
+apps/web/src/
+  api/          Generated Hey API client (ignored; do not edit)
+  components/   Reusable, prop-driven UI; stock shadcn primitives in ui/
+  widgets/      Composed UI with data and interaction logic, grouped by domain
+  pages/        Route entry points that compose widgets
+  hooks/        Reusable React behavior and query/state hooks
+  libs/         Non-React helpers: dates, money, status labels and cn
+  routes/       React Router route tree and URL builders
+  types/        Type aliases derived from generated API contracts
+```
+
+React Router uses declarative routes; TanStack Query and Hey API continue to own server data. The shared workspace layout resolves the URL's business and supplies it to nested pages. The inbox page loads lazily, with a skeleton inside the shared shell while its code loads. Business switching changes the URL, so direct links, reloads and browser Back/Forward retain the business. `/businesses/:tenantId` redirects to its inbox; unknown pages and business IDs show a not-found view. Navigation does not provide authentication or authorization.
+
+Business changes reset the reviewer, filters, selection and unsaved edits. Message selection and filters remain local UI state for this step. Quality & Trust, Activity and Settings remain disabled until implemented. Use `routes/paths.ts` for navigation links. When adding a page, register it in `routes/index.tsx` and compose its widgets in `pages/`.
+
+Date formatting uses date-fns and `@date-fns/tz` through `libs/date.ts`. API timestamps retain their offsets and are displayed in the business's timezone (Dubai or Riyadh), regardless of the reviewer's computer timezone. A production static host must serve `index.html` for client routes; Vite already provides this fallback locally.
+
 ## API contract
 
 Elysia routes use Zod for request/response validation. The OpenAPI plugin converts those schemas with `z.toJSONSchema` to generate `apps/api/openapi.json`. Hey API generates the typed SDK and TanStack Query helpers in `apps/web/src/api/`.
@@ -75,7 +95,7 @@ bun run api:generate
 | `bun run format` | Format source files |
 | `bun run openapi:export` | Export the API specification |
 | `bun run api:generate` | Export the specification and generate the web client |
-| `bun run test` | Run fixture API behavior and quote-integrity tests |
+| `bun run test` | Run fixture API behavior, quote integrity and business-date tests |
 | `bun run check` | Run lint, typechecking, tests, and builds |
 
 ## Configuration

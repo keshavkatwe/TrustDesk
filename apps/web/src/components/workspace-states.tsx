@@ -1,14 +1,6 @@
-import { InboxIcon, RefreshCwIcon } from 'lucide-react';
+import { RefreshCwIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function LoadError({ onRetry }: { onRetry: () => void }) {
@@ -33,29 +25,5 @@ export function LoadingWorkspace() {
       <Skeleton className="h-40 w-full" />
       <span className="sr-only">Loading…</span>
     </div>
-  );
-}
-export function EmptyInbox({ onClear }: { onClear?: () => void }) {
-  return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <InboxIcon />
-        </EmptyMedia>
-        <EmptyTitle>{onClear ? 'No matching messages' : 'Select a message'}</EmptyTitle>
-        <EmptyDescription>
-          {onClear
-            ? 'Try another search or status to see more sample messages.'
-            : 'Choose a message from the inbox to review its draft and evidence.'}
-        </EmptyDescription>
-      </EmptyHeader>
-      {onClear && (
-        <EmptyContent>
-          <Button variant="outline" onClick={onClear}>
-            Clear filters
-          </Button>
-        </EmptyContent>
-      )}
-    </Empty>
   );
 }

@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, RefreshCwIcon } from 'lucide-react';
-import { useState } from 'react';
-import { getDemoInboxOptions } from '@/api/@tanstack/react-query.gen';
+import { EmptyInbox } from '@/components/inbox/empty-inbox';
+import { MessageRow } from '@/components/inbox/message-row';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -15,43 +14,28 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
+import { LoadError, LoadingWorkspace } from '@/components/workspace-states';
+import { useInbox } from '@/hooks/use-inbox';
+import { statuses } from '@/libs/inbox';
+import { cn } from '@/libs/utils';
+import type { Tenant } from '@/types/api';
 import { ReviewPanel } from './review-panel';
-import { EmptyInbox, LoadError, LoadingWorkspace } from './states';
-import { StatusBadge } from './status-badge';
-import { type InboxItem, statuses, type Tenant, timestamp } from './types';
 
 export function InboxWorkspace({ tenant }: { tenant: Tenant }) {
-  const inbox = useQuery({
-    ...getDemoInboxOptions({ path: { tenantId: tenant.id } }),
-    retry: false,
-  });
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filter, setFilter] = useState('needs_approval');
-  const [search, setSearch] = useState('');
-  const [approverId, setApproverId] = useState('');
-  const isMobile = useIsMobile();
-  const items = inbox.data?.items ?? [];
-  const matching = items.filter(
-    (item) =>
-      (filter === 'all' || item.status === filter) &&
-      [item.title, item.body, item.customer, item.sourceEvent]
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(search.toLocaleLowerCase().trim()),
-  );
-  const selected = selectedId
-    ? items.find((item) => item.id === selectedId)
-    : !isMobile
-      ? matching[0]
-      : undefined;
-  const pending = items.filter((item) => item.status === 'needs_approval').length;
-  const clearFilters = () => {
-    setFilter('all');
-    setSearch('');
-    setSelectedId(null);
-  };
+  const {
+    inbox,
+    selected,
+    matching,
+    pending,
+    search,
+    setSearch,
+    filter,
+    setFilter,
+    approverId,
+    setApproverId,
+    setSelectedId,
+    clearFilters,
+  } = useInbox(tenant.id);
   return (
     <>
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b px-4 py-3 md:px-6">
@@ -212,45 +196,5 @@ export function InboxWorkspace({ tenant }: { tenant: Tenant }) {
         </div>
       )}
     </>
-  );
-}
-function MessageRow({
-  item,
-  selected,
-  timezone,
-  onSelect,
-}: {
-  item: InboxItem;
-  selected: boolean;
-  timezone: string;
-  onSelect: () => void;
-}) {
-  return (
-    <Button
-      variant={selected ? 'secondary' : 'ghost'}
-      className="h-auto w-full flex-col items-stretch gap-2 p-3"
-      onClick={onSelect}
-      aria-current={selected ? 'true' : undefined}
-    >
-      <span className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>
-          {item.channel} · {item.language}
-        </span>
-        <time dateTime={item.receivedAt}>{timestamp(item.receivedAt, timezone)}</time>
-      </span>
-      <span className="truncate text-start">{item.title}</span>
-      <span className="truncate text-start text-xs text-muted-foreground" dir="auto">
-        {item.customer}
-      </span>
-      <span
-        className="line-clamp-2 whitespace-normal text-start text-xs text-muted-foreground"
-        dir="auto"
-      >
-        {item.body}
-      </span>
-      <span className="flex flex-wrap gap-1">
-        <StatusBadge status={item.status} />
-      </span>
-    </Button>
   );
 }
