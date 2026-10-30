@@ -6,6 +6,7 @@ import { WorkspaceLayout } from '@/widgets/app-shell/workspace-layout';
 import { paths, routePatterns } from './paths';
 
 const InboxPage = lazy(() => import('@/pages/inbox-page'));
+const QualityPage = lazy(() => import('@/pages/quality-page'));
 
 export function AppRoutes() {
   return (
@@ -14,6 +15,7 @@ export function AppRoutes() {
       <Route path={routePatterns.business} element={<WorkspaceLayout />}>
         <Route index element={<Navigate to="inbox" replace />} />
         <Route path="inbox" element={<InboxPage />} />
+        <Route path="quality" element={<QualityPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

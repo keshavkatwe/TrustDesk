@@ -44,6 +44,7 @@ export function AppSidebar({
 }) {
   const { setOpenMobile } = useSidebar();
   const isInbox = useMatch(routePatterns.inbox);
+  const isQuality = useMatch(routePatterns.quality);
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -65,8 +66,15 @@ export function AppSidebar({
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={Boolean(isQuality)}>
+                  <NavLink to={paths.quality(tenant.id)} onClick={() => setOpenMobile(false)}>
+                    <ShieldCheckIcon />
+                    <span>Quality &amp; Trust</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {[
-                { label: 'Quality & Trust', icon: ShieldCheckIcon },
                 { label: 'Activity', icon: ActivityIcon },
                 { label: 'Settings', icon: SettingsIcon },
               ].map(({ label, icon: Icon }) => (

@@ -1,17 +1,18 @@
 import { Suspense } from 'react';
-import { Outlet, useNavigate, useParams } from 'react-router';
+import { Outlet, useMatch, useNavigate, useParams } from 'react-router';
 import { RouteNotFound } from '@/components/route-not-found';
 import { Button } from '@/components/ui/button';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { LoadError, LoadingWorkspace } from '@/components/workspace-states';
 import { useWorkspace } from '@/hooks/use-workspace';
-import { paths } from '@/routes/paths';
+import { paths, routePatterns } from '@/routes/paths';
 import { AppSidebar } from './app-sidebar';
 
 export function WorkspaceLayout() {
   const { tenantId } = useParams();
   const workspace = useWorkspace();
   const navigate = useNavigate();
+  const isQuality = useMatch(routePatterns.quality);
   if (workspace.isError)
     return (
       <main className="mx-auto max-w-xl p-8">
@@ -37,12 +38,14 @@ export function WorkspaceLayout() {
   return (
     <SidebarProvider className="h-svh overflow-hidden">
       <Button asChild variant="outline" className="sr-only focus:not-sr-only focus:absolute">
-        <a href="#inbox">Skip to inbox</a>
+        <a href={isQuality ? '#quality' : '#inbox'}>
+          Skip to {isQuality ? 'quality evidence' : 'inbox'}
+        </a>
       </Button>
       <AppSidebar
         tenants={workspace.data.tenants}
         tenant={tenant}
-        onTenantChange={(id) => void navigate(paths.inbox(id))}
+        onTenantChange={(id) => void navigate(isQuality ? paths.quality(id) : paths.inbox(id))}
       />
       <SidebarInset className="min-w-0">
         <Suspense

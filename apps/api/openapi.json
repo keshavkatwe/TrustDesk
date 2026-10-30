@@ -2993,6 +2993,1051 @@
         }
       }
     },
+    "/tenants/{tenantId}/quality": {
+      "get": {
+        "operationId": "getQualityOverview",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Recent tenant-owned AI evidence and supervised trust readiness",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "tenantId": {
+                      "type": "string",
+                      "enum": [
+                        "qamar",
+                        "rimal"
+                      ]
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    "attemptLimit": {
+                      "type": "number",
+                      "const": 50
+                    },
+                    "configuration": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "string"
+                        },
+                        "promptVersion": {
+                          "type": "string"
+                        },
+                        "engineVersion": {
+                          "type": "string"
+                        },
+                        "catalogueVersion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "autoSend": {
+                          "type": "string",
+                          "enum": [
+                            "low_risk_only",
+                            "off"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "model",
+                        "promptVersion",
+                        "engineVersion",
+                        "catalogueVersion",
+                        "autoSend"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "trust": {
+                      "type": "object",
+                      "properties": {
+                        "level": {
+                          "type": "string",
+                          "const": "supervised"
+                        },
+                        "promotionAvailable": {
+                          "type": "boolean",
+                          "const": false
+                        }
+                      },
+                      "required": [
+                        "level",
+                        "promotionAvailable"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "prepared": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "failed": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "running": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "superseded": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "estimatedCostUsd": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "unpriced": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "reviews": {
+                          "type": "object",
+                          "properties": {
+                            "approved": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "rejected": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "handedOff": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "edited": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "approved",
+                            "rejected",
+                            "handedOff",
+                            "edited"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "prepared",
+                        "failed",
+                        "running",
+                        "superseded",
+                        "estimatedCostUsd",
+                        "unpriced",
+                        "reviews"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "attempts": {
+                      "maxItems": 50,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "running",
+                              "succeeded",
+                              "failed",
+                              "superseded"
+                            ]
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "promptVersion": {
+                            "type": "string"
+                          },
+                          "errorCode": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "responseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "usage": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "inputTokens": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "cachedInputTokens": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "outputTokens": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "estimatedCostUsd": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "inputTokens",
+                              "cachedInputTokens",
+                              "outputTokens",
+                              "estimatedCostUsd"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "durationMs": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "sourceEvent": {
+                            "type": "string"
+                          },
+                          "customer": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "whatsapp",
+                              "email",
+                              "webform"
+                            ]
+                          },
+                          "resultDraftId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "review": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "action": {
+                                "type": "string",
+                                "enum": [
+                                  "approve",
+                                  "reject",
+                                  "hand_off"
+                                ]
+                              },
+                              "reviewer": {
+                                "type": "string"
+                              },
+                              "at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              "edited": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "action",
+                              "reviewer",
+                              "at",
+                              "edited"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "model",
+                          "promptVersion",
+                          "errorCode",
+                          "responseId",
+                          "usage",
+                          "durationMs",
+                          "createdAt",
+                          "title",
+                          "sourceEvent",
+                          "customer",
+                          "channel",
+                          "resultDraftId",
+                          "review"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "tenantId",
+                    "updatedAt",
+                    "attemptLimit",
+                    "configuration",
+                    "trust",
+                    "summary",
+                    "attempts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/quality/attempts/{runId}": {
+      "get": {
+        "operationId": "getQualityAttempt",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Inspect one saved AI attempt without calling the model",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "succeeded",
+                        "failed",
+                        "superseded"
+                      ]
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "promptVersion": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "responseId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "usage": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "inputTokens": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "cachedInputTokens": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "outputTokens": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "estimatedCostUsd": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "inputTokens",
+                        "cachedInputTokens",
+                        "outputTokens",
+                        "estimatedCostUsd"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "durationMs": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "sourceEvent": {
+                      "type": "string"
+                    },
+                    "customer": {
+                      "type": "string"
+                    },
+                    "channel": {
+                      "type": "string",
+                      "enum": [
+                        "whatsapp",
+                        "email",
+                        "webform"
+                      ]
+                    },
+                    "resultDraftId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "review": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "action": {
+                          "type": "string",
+                          "enum": [
+                            "approve",
+                            "reject",
+                            "hand_off"
+                          ]
+                        },
+                        "reviewer": {
+                          "type": "string"
+                        },
+                        "at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        "edited": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "action",
+                        "reviewer",
+                        "at",
+                        "edited"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "sourceDraftId": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "reply": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "assessment": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "engineVersion": {
+                          "type": "string"
+                        },
+                        "catalogueVersion": {
+                          "type": "string"
+                        },
+                        "fingerprint": {
+                          "type": "string"
+                        },
+                        "request": {
+                          "type": "object",
+                          "properties": {
+                            "intent": {
+                              "type": "string",
+                              "enum": [
+                                "quote",
+                                "faq",
+                                "support",
+                                "spam"
+                              ]
+                            },
+                            "language": {
+                              "type": "string",
+                              "enum": [
+                                "Arabic",
+                                "English",
+                                "Mixed"
+                              ]
+                            },
+                            "lines": {
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "sku": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "minLength": 1
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  },
+                                  "quantity": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 20,
+                                    "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "item",
+                                      "m2"
+                                    ]
+                                  },
+                                  "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "buy",
+                                      "month",
+                                      "day"
+                                    ]
+                                  },
+                                  "periods": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 20,
+                                    "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                  }
+                                },
+                                "required": [
+                                  "sku",
+                                  "description",
+                                  "quantity",
+                                  "unit",
+                                  "mode",
+                                  "periods"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "location": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 100
+                            },
+                            "delivery": {
+                              "type": "string",
+                              "enum": [
+                                "requested",
+                                "collection",
+                                "unknown"
+                              ]
+                            },
+                            "deliveryTrips": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 1,
+                              "maximum": 100
+                            },
+                            "discountRequested": {
+                              "type": "boolean"
+                            },
+                            "discountPercent": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 20,
+                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                            },
+                            "budgetMinor": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "availabilityRequested": {
+                              "type": "boolean"
+                            },
+                            "faqIndex": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "missing": {
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "intent",
+                            "language",
+                            "lines",
+                            "location",
+                            "delivery",
+                            "deliveryTrips",
+                            "discountRequested",
+                            "discountPercent",
+                            "budgetMinor",
+                            "availabilityRequested",
+                            "faqIndex",
+                            "missing"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": [
+                            "auto_send",
+                            "needs_approval",
+                            "hand_off",
+                            "drop"
+                          ]
+                        },
+                        "blockApproval": {
+                          "type": "boolean"
+                        },
+                        "quote": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "currency": {
+                              "type": "string",
+                              "enum": [
+                                "AED",
+                                "SAR"
+                              ]
+                            },
+                            "vatPercent": {
+                              "type": "number"
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "sku": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "unitPriceMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "quantity": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "periods": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "lineTotalMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "sku",
+                                  "label",
+                                  "unitPriceMinor",
+                                  "quantity",
+                                  "periods",
+                                  "unit",
+                                  "lineTotalMinor"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "subtotalMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "discountMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "vatMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "totalMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "complete": {
+                              "type": "boolean"
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "currency",
+                            "vatPercent",
+                            "lines",
+                            "subtotalMinor",
+                            "discountMinor",
+                            "vatMinor",
+                            "totalMinor",
+                            "complete",
+                            "note"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "reasons": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "detail": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "title",
+                              "detail",
+                              "source"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "missing": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "engineVersion",
+                        "catalogueVersion",
+                        "fingerprint",
+                        "request",
+                        "disposition",
+                        "blockApproval",
+                        "quote",
+                        "reasons",
+                        "missing"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "inputHash": {
+                      "type": "string"
+                    },
+                    "finishedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "model",
+                    "promptVersion",
+                    "errorCode",
+                    "responseId",
+                    "usage",
+                    "durationMs",
+                    "createdAt",
+                    "title",
+                    "sourceEvent",
+                    "customer",
+                    "channel",
+                    "resultDraftId",
+                    "review",
+                    "sourceDraftId",
+                    "body",
+                    "reply",
+                    "assessment",
+                    "inputHash",
+                    "finishedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "operationId": "getHealth",

@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./inbox/model": "./src/inbox/model.ts",
     "./ai/model": "./src/ai/model.ts",
-    "./receive/model": "./src/receive/model.ts"
+    "./receive/model": "./src/receive/model.ts",
+    "./quality/model": "./src/quality/model.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

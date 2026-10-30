@@ -2,6 +2,7 @@ import {
   createDraftingService,
   createInboxService,
   createOpenAIProvider,
+  createQualityService,
   createReceiveService,
   draftPublisher,
   queueClient,
@@ -25,7 +26,12 @@ const drafting = createDraftingService(database, ['qamar', 'rimal'], provider);
 const queue = queueClient(databaseUrl('DATABASE_URL'));
 await queue.start();
 const receive = createReceiveService(database, ['qamar', 'rimal'], draftPublisher(queue));
-const app = createApp(inbox, drafting, receive).listen({
+const quality = createQualityService(
+  database,
+  ['qamar', 'rimal'],
+  provider?.model ?? process.env.OPENAI_MODEL,
+);
+const app = createApp(inbox, drafting, receive, quality).listen({
   port,
   hostname: '127.0.0.1',
   idleTimeout: 60,

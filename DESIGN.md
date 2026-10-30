@@ -1,6 +1,6 @@
 # TrustDesk design
 
-Status: 30 October 2026. The local receive → draft → decide → approve → simulated-send flow is implemented. Measured evaluation/trust evidence remains planned. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed). **Agents draft; code decides.**
+Status: 30 October 2026. The local receive → draft → decide → approve → simulated-send flow and read-only Quality & Trust operational evidence are implemented. Measured evaluations and trust promotion remain planned. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed). **Agents draft; code decides.**
 
 ## Architecture and boundaries
 
@@ -55,7 +55,7 @@ Review locks the conversation then draft; it checks business-owned approver, pen
 
 Every second, the worker scans unresolved outbox intent. The simulator locks the conversation, rechecks approval, latest message/version, pricing fingerprint, policy and approved commercial facts, then inserts one immutable result per intent. Stale work is cancelled. Concurrent/repeated dispatch returns the same result. Stored text is the exact approved wording, with destination, simulation ID and timestamp. No channel API/network delivery exists. This local transaction proves simulator idempotency, not exactly-once delivery to a real provider; external dispatch needs provider idempotency and reconciliation.
 
-The UI clearly distinguishes queued, preparing, failed, pending review, approved, simulated sent and cancelled. Refresh/restart preserves data. date-fns formats business-timezone timestamps. Quality & Trust, Activity and Settings remain disabled. Test messages and original-event replay exercise the same intake path; duplicate replays do not spend again.
+The UI clearly distinguishes queued, preparing, failed, pending review, approved, simulated sent and cancelled. Refresh/restart preserves data. date-fns formats business-timezone timestamps. Quality & Trust shows the latest 50 saved AI attempts across versions, exact known cost estimates, named workflow reviews and source/output provenance. Failed regeneration never inherits the previous draft's output or review. Active configuration is separate from saved versions. Read-only inspection makes no model call; workflow outcomes are not evaluation scores or calibration. Pending evaluation requirements keep trust supervised and promotion unavailable. Activity and Settings remain disabled. Test messages and original-event replay exercise the same intake path; duplicate replays do not spend again.
 
 ## Trust, threats and remaining proof
 
