@@ -27,6 +27,10 @@
       "dependsOn": ["@trustdesk/api#openapi:export"],
       "outputs": ["src/api/**"]
     },
+    "db:generate": { "cache": false },
+    "db:migrate": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
+    "db:seed": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
+    "db:test": { "cache": false, "env": ["DATABASE_TEST_URL", "DATABASE_TEST_ADMIN_URL"] },
     "@trustdesk/web#dev": {
       "dependsOn": ["api:generate"],
       "cache": false,

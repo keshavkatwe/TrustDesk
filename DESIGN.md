@@ -22,6 +22,8 @@ Tenant data crosses the model-provider boundary only in that tenant's request. B
 
 API structure follows Elysia's feature-module guidance: `modules/<feature>/index.ts` controllers, Zod `model.ts` contracts and optional feature-local `service.ts` logic. Inline handlers extract inputs and map outcomes to HTTP responses. Shared business services stay in `packages/core`, without Elysia context or HTTP status dependencies; `app.ts` composes modules and `index.ts` owns listening. The disposable demo service remains local to its module until durable core services replace it.
 
+Database foundation is implemented in `packages/db`: local Postgres 18.6, Drizzle migrations, bounded node-postgres pools, separate non-superuser application/migration roles, and forced RLS on tenants, approvers, receiving channels, catalogue versions and rows. `withTenant` sets transaction-local context; pooled reuse/concurrent contexts and intentionally missing filters are tested. Composite catalogue keys prevent cross-tenant references, and channel/destination pairs are globally unique. Catalogue source hashes prevent seed-price changes under an existing version; runtime catalogue access is read-only. Original seed files are preserved in `seed/`. Added short names/timezones are documented assumptions. Messages, drafts, decisions, runtime tenant discovery and API/database integration remain planned.
+
 ## Current UI prototype
 
 The user chose UI first: stock shadcn shell, business switcher, inbox search/status filters and a review panel. Six hand-authored scenarios cover both businesses, Arabic/mixed text, corrected quantities, discounts, outside-area handoff, required crew and budget overrun. Quote rows, extraction and hold reasons are illustrative fixtures, not inference or policy-engine output. Some seed messages are condensed and display times are illustrative.
@@ -40,7 +42,7 @@ The worker supplies only the tenant's versioned catalogue, rules, and relevant c
 
 Planned records: tenants/channel mappings/approvers; catalogue versions and rows; conversations/messages/event receipts; agent versions/draft revisions/policy results; approvals/edit diffs/outbox/audit events; gold-set versions/eval runs/results/trust events. Business-owned foreign keys include tenant identity. Approval uses a conditional state transition and a unique terminal decision; approval plus outbox intent is atomic. Outbox uniqueness prevents duplicate simulated dispatch. Production delivery would additionally need provider idempotency or reconciliation.
 
-Use RLS with transaction-local tenant context and a restricted application role; migration privileges remain separate. Tests must exercise that role, including pooled-connection reuse. Durable failures stay visible and replayable.
+Extend the foundation's RLS, composite-key and role separation to future message/approval tables. Tests must exercise the restricted role, including pooled-connection reuse. Durable failures stay visible and replayable.
 
 ## Tenant rules, money, and assumptions
 
@@ -81,4 +83,4 @@ Proposed depth: **A, failure handling**, and **B, isolation**. A adds bounded ba
 
 At 200 tenants/50,000 messages a day, inspect inference concurrency, provider limits, tenant fairness and database/queue pool contention first. Bound each tenant's in-flight jobs and spend, separate worker capacity, index tenant/status/time access paths, and retain aggregate metrics while archiving large run payloads.
 
-Current: workspace, health endpoint, user-reviewed fixture-backed inbox/review UI, business-scoped web routes, date helpers, spec/client generation and lint/typechecks/tests/builds. Next: database/seeds; receive/queue/dedupe; draft/pricing/policy; durable approval/outbox/trails; evals/trust/depth. Keep a complete thin spine before optional depth. Cut live integrations, production auth/deployment and cosmetic work. Submission docs remain short: README, this design (target <=3 pages), handler review, AI log, six-week team plan, and an 8–12 minute walkthrough. No production-readiness or measured-quality claim is made yet.
+Current: workspace, health endpoint, fixture-backed inbox/review UI, business-scoped web routes, database foundation/seeds, spec/client generation and lint/typechecks/unit/integration tests/builds. Next: durable inbox/review services; receive/queue/dedupe; draft/pricing/policy; approval/outbox/trails; evals/trust/depth. Keep a complete thin spine before optional depth. Cut live integrations, production auth/deployment and cosmetic work. Submission docs remain short: README, this design (target <=3 pages), handler review, AI log, six-week team plan, and an 8–12 minute walkthrough. No production-readiness or measured AI-quality claim is made yet.

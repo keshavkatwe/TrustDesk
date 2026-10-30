@@ -1,0 +1,523 @@
+{
+  "id": "7de1bd76-a42d-4e56-8405-9da335a118a6",
+  "prevId": "c5f7049e-601e-4980-b72a-8d0b1e99ee50",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.approvers": {
+      "name": "approvers",
+      "schema": "",
+      "columns": {
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approvers_tenant_id_tenants_id_fk": {
+          "name": "approvers_tenant_id_tenants_id_fk",
+          "tableFrom": "approvers",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "approvers_tenant_id_id_pk": {
+          "name": "approvers_tenant_id_id_pk",
+          "columns": [
+            "tenant_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "tenant_isolation": {
+          "name": "tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"approvers\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))",
+          "withCheck": "\"approvers\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.catalogue_rows": {
+      "name": "catalogue_rows",
+      "schema": "",
+      "columns": {
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item": {
+          "name": "item",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_arabic": {
+          "name": "item_arabic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rent_per_month_minor": {
+          "name": "rent_per_month_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "buy_minor": {
+          "name": "buy_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_day_minor": {
+          "name": "per_day_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_shift_minor": {
+          "name": "per_shift_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "flat_minor": {
+          "name": "flat_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalogue_rows_version_fk": {
+          "name": "catalogue_rows_version_fk",
+          "tableFrom": "catalogue_rows",
+          "columnsFrom": [
+            "tenant_id",
+            "version"
+          ],
+          "tableTo": "catalogue_versions",
+          "columnsTo": [
+            "tenant_id",
+            "version"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalogue_rows_tenant_id_version_id_pk": {
+          "name": "catalogue_rows_tenant_id_version_id_pk",
+          "columns": [
+            "tenant_id",
+            "version",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "tenant_isolation": {
+          "name": "tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalogue_rows\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))",
+          "withCheck": "\"catalogue_rows\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))"
+        }
+      },
+      "checkConstraints": {
+        "catalogue_rows_price_shape": {
+          "name": "catalogue_rows_price_shape",
+          "value": "(\n    (num_nonnulls(\"catalogue_rows\".\"rent_per_month_minor\", \"catalogue_rows\".\"buy_minor\") >= 1 and num_nonnulls(\"catalogue_rows\".\"per_day_minor\", \"catalogue_rows\".\"per_shift_minor\", \"catalogue_rows\".\"flat_minor\") = 0)\n    or (\"catalogue_rows\".\"rent_per_month_minor\" is null and \"catalogue_rows\".\"buy_minor\" is null and num_nonnulls(\"catalogue_rows\".\"per_day_minor\", \"catalogue_rows\".\"per_shift_minor\", \"catalogue_rows\".\"flat_minor\") = 1)\n  )"
+        },
+        "catalogue_rows_nonnegative": {
+          "name": "catalogue_rows_nonnegative",
+          "value": "\"catalogue_rows\".\"rent_per_month_minor\" >= 0 and \"catalogue_rows\".\"buy_minor\" >= 0 and \"catalogue_rows\".\"per_day_minor\" >= 0 and \"catalogue_rows\".\"per_shift_minor\" >= 0 and \"catalogue_rows\".\"flat_minor\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalogue_versions": {
+      "name": "catalogue_versions",
+      "schema": "",
+      "columns": {
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_hash": {
+          "name": "source_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalogue_versions_tenant_id_tenants_id_fk": {
+          "name": "catalogue_versions_tenant_id_tenants_id_fk",
+          "tableFrom": "catalogue_versions",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "catalogue_versions_tenant_id_version_pk": {
+          "name": "catalogue_versions_tenant_id_version_pk",
+          "columns": [
+            "tenant_id",
+            "version"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "tenant_isolation": {
+          "name": "tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalogue_versions\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))",
+          "withCheck": "\"catalogue_versions\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))"
+        }
+      },
+      "checkConstraints": {
+        "catalogue_versions_hash": {
+          "name": "catalogue_versions_hash",
+          "value": "\"catalogue_versions\".\"source_hash\" ~ '^[a-f0-9]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.receiving_channels": {
+      "name": "receiving_channels",
+      "schema": "",
+      "columns": {
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "receiving_channels_tenant_idx": {
+          "name": "receiving_channels_tenant_idx",
+          "columns": [
+            {
+              "expression": "tenant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "receiving_channels_tenant_id_tenants_id_fk": {
+          "name": "receiving_channels_tenant_id_tenants_id_fk",
+          "tableFrom": "receiving_channels",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "tableTo": "tenants",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "receiving_channels_channel_address_pk": {
+          "name": "receiving_channels_channel_address_pk",
+          "columns": [
+            "channel",
+            "address"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "tenant_isolation": {
+          "name": "tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"receiving_channels\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))",
+          "withCheck": "\"receiving_channels\".\"tenant_id\" = (select nullif(current_setting('app.tenant_id', true), ''))"
+        }
+      },
+      "checkConstraints": {
+        "receiving_channels_kind": {
+          "name": "receiving_channels_kind",
+          "value": "\"receiving_channels\".\"channel\" in ('whatsapp', 'email', 'webform')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.tenants": {
+      "name": "tenants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "short_name": {
+          "name": "short_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sells": {
+          "name": "sells",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency_minor_units": {
+          "name": "currency_minor_units",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vat_basis_points": {
+          "name": "vat_basis_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "languages": {
+          "name": "languages",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "auto_send": {
+          "name": "auto_send",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount_threshold_basis_points": {
+          "name": "discount_threshold_basis_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "service_areas": {
+          "name": "service_areas",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outside_service_area": {
+          "name": "outside_service_area",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minimum_order_minor": {
+          "name": "minimum_order_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "0"
+        },
+        "faq": {
+          "name": "faq",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "tenant_isolation": {
+          "name": "tenant_isolation",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"tenants\".\"id\" = (select nullif(current_setting('app.tenant_id', true), ''))",
+          "withCheck": "\"tenants\".\"id\" = (select nullif(current_setting('app.tenant_id', true), ''))"
+        }
+      },
+      "checkConstraints": {
+        "tenants_id_format": {
+          "name": "tenants_id_format",
+          "value": "\"tenants\".\"id\" ~ '^[a-z][a-z0-9_-]{0,63}$'"
+        },
+        "tenants_currency": {
+          "name": "tenants_currency",
+          "value": "\"tenants\".\"currency\" in ('AED', 'SAR') and \"tenants\".\"currency_minor_units\" = 2"
+        },
+        "tenants_rates": {
+          "name": "tenants_rates",
+          "value": "\"tenants\".\"vat_basis_points\" between 0 and 10000 and \"tenants\".\"discount_threshold_basis_points\" between 0 and 10000"
+        },
+        "tenants_policy": {
+          "name": "tenants_policy",
+          "value": "\"tenants\".\"auto_send\" in ('low_risk_only', 'off') and \"tenants\".\"outside_service_area\" = 'hand_off' and \"tenants\".\"minimum_order_minor\" >= 0"
+        },
+        "tenants_lists": {
+          "name": "tenants_lists",
+          "value": "cardinality(\"tenants\".\"languages\") > 0 and \"tenants\".\"languages\" <@ array['ar','en']::text[] and cardinality(\"tenants\".\"service_areas\") > 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

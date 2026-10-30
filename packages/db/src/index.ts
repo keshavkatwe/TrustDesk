@@ -1,2 +1,2 @@
-// Drizzle schema, migrations, and database access will live in this package.
-export {};
+export { createDatabase, type Database, type TenantTransaction, withTenant } from './client.ts';
+export * from './schema.ts';

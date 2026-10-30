@@ -22,7 +22,7 @@ bun run dev
 - API health: <http://localhost:3000/healthz>
 - API documentation: <http://localhost:3000/openapi>
 
-No database or API key is needed for this prototype. The worker is a placeholder; no queue consumers run yet.
+No database or API key is needed to run the current fixture-backed UI. The database foundation is available separately below. The worker is a placeholder; no queue consumers run yet.
 
 ## Try the inbox
 
@@ -44,13 +44,27 @@ apps/
   web/       Vite, React, Tailwind, shadcn/ui, generated Hey API client
   worker/    Background worker entry point
 packages/
-  db/        Database package placeholder
+  db/        Postgres/Drizzle schema, migrations, seeds and tenant-scoped access
   core/      Backend services package placeholder, shared by API and worker
 scripts/
   with-env.ts
 ```
 
 The database and core packages export TypeScript source directly. Their code is bundled by the applications that use them. AI and shared utilities will be modules inside `core`, rather than separate workspace packages.
+
+## Database setup
+
+With Docker running, initialize local Postgres from the repository root:
+
+```sh
+bun run db:up
+bun run db:migrate
+bun run db:seed
+```
+
+This starts PostgreSQL 18.6 on `127.0.0.1:5433` with persistent storage and separate application/migration roles. It loads the original Qamar/Rimal configuration, four approvers, five channel mappings and twenty versioned catalogue rows. All five tables enforce tenant row-level security. The UI still uses its fixture adapter; database-backed inbox/review services are a subsequent step.
+
+Run `bun run db:test` for real Postgres isolation/integrity tests against a separate test database. Ordinary `bun run check` remains key-free and does not need a database server. See [database usage and boundaries](packages/db/README.md) and [original seed provenance](seed/README.md).
 
 ## Web structure and routes
 
@@ -118,11 +132,16 @@ bun run api:generate
 | `bun run format` | Format source files |
 | `bun run openapi:export` | Export the API specification |
 | `bun run api:generate` | Export the specification and generate the web client |
-| `bun run test` | Run fixture API behavior, quote integrity and business-date tests |
+| `bun run db:up` / `bun run db:down` | Start local Postgres / stop it while preserving the volume |
+| `bun run db:generate` | Generate a migration from the Drizzle schema |
+| `bun run db:migrate` | Apply reviewed migrations using the migration role |
+| `bun run db:seed` | Insert the original businesses and catalogue data |
+| `bun run db:test` | Run real Postgres isolation and integrity tests |
+| `bun run test` | Run fixture API, quote integrity, business-date and source-decimal tests |
 | `bun run check` | Run lint, typechecking, tests, and builds |
 
 ## Configuration
 
 Copy `.env.example` to `.env` only if you want to change the defaults. The root environment wrapper forwards configuration to Turbo; task environment variables are explicitly listed in `turbo.json`. Vite reads frontend configuration from the root and exposes only `VITE_*` variables to the browser.
 
-UI uses [shadcn preset b7BFf3k1o](https://ui.shadcn.com/create?preset=b7BFf3k1o): Radix Nova shapes and spacing, Mist base/chart colors, Teal primary actions, Inter font and Lucide icons. Semantic status badges extend the preset. Theme colors are defined in `apps/web/src/index.css`; badge variants use those tokens. Database setup, queue processing, AI integration and durable approvals will be added in subsequent steps.
+UI uses [shadcn preset b7BFf3k1o](https://ui.shadcn.com/create?preset=b7BFf3k1o): Radix Nova shapes and spacing, Mist base/chart colors, Teal primary actions, Inter font and Lucide icons. Semantic status badges extend the preset. Theme colors are defined in `apps/web/src/index.css`; badge variants use those tokens. Database-backed inbox/review services, queue processing, AI integration and durable approvals will be added in subsequent steps.

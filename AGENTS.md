@@ -20,7 +20,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 - `apps/api`: Elysia 1.x HTTP routes, Zod request/response validation, OpenAPI export. Keep routes thin and `.listen()` in the process entry point.
 - `apps/web`: React + Vite, React Router, Tailwind, stock shadcn/ui, TanStack Query, generated Hey API client, date-fns.
 - `apps/worker`: pg-boss consumers and worker lifecycle. Queue integration is planned, not implemented yet.
-- `packages/db`: PostgreSQL connection, Drizzle schema, migrations, and tenant-scoped database access. Currently a placeholder.
+- `packages/db`: PostgreSQL connection, Drizzle schema, migrations, seed loading and tenant-scoped database access. Foundation tables are implemented; message/draft/approval persistence is planned.
 - `packages/core`: business services shared by API and worker. AI, pricing, policy, approvals, and trust belong in modules here. Currently a placeholder.
 - Applications do not import code from other applications. Backend packages do not depend on React or Elysia request context.
 - Do not add separate `ai`, `shared`, or UI workspace packages without a demonstrated need and a design update.
@@ -42,6 +42,9 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## Domain invariants
 
+- Use the restricted application database URL for runtime work and `withTenant` for business-owned queries. Keep explicit tenant filters as well as RLS. The helper uses transaction-local context and must receive a tenant resolved by trusted identity/adapter code. Migration/seed URLs are separate and never used by request handlers. Database creation/imports do not open a connection at module load.
+- Generate and review migrations; do not use schema push as a substitute. Keep Drizzle SQL and metadata together. `0001_tenant_security.sql` adds forced RLS and grants beyond Drizzle's snapshot; add equivalent protection for future tables. Database mutations and integration tests are uncached Turbo tasks. Read `packages/db/README.md` before changing their lifecycle or permissions.
+- Preserve the original challenge data under `seed/`, including IDs, Arabic text and catalogue version. Source JSON and generated migration metadata are excluded from automatic formatting. Seed decimals convert to `bigint` minor units by digits; never silently round excess source precision. Catalogue source changes require a new version, not an overwrite.
 - Resolve tenants from a verified receiving-channel mapping, not customer text or `metadata.tenant_id`. Unknown destinations fail closed. The local replay runner is a synthetic input adapter, not production webhook authentication.
 - Scope business-owned reads, writes, prompts, logs, and screens by tenant. Use database constraints and RLS as specified in the design; test with a role that cannot bypass those controls.
 - Identify a customer message by tenant + channel + channel message ID. Event receipts remain separately traceable. Enforce deduplication with database uniqueness and transactions, not a read-then-insert check.
@@ -54,7 +57,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## Validation and evidence
 
-Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API and business-date tests, and builds. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
+Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API, business-date and source-decimal unit tests, and builds without a database. `bun run db:test` separately exercises real Postgres migrations, seeds, constraints and restricted-role RLS against a matching `*_test` database with separate app/migration roles. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
 
 For API changes, regenerate the contract with `bun run api:generate`, inspect the spec, and exercise affected routes including rejection behavior. For UI behavior, verify the result in a browser. For database/concurrency changes, exercise real Postgres constraints, transactions, and the restricted application role.
 
