@@ -31,6 +31,21 @@
     "db:migrate": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
     "db:seed": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
     "db:test": { "cache": false, "env": ["DATABASE_TEST_URL", "DATABASE_TEST_ADMIN_URL"] },
+    "inbox:seed": {
+      "dependsOn": ["@trustdesk/db#db:seed"],
+      "cache": false,
+      "env": ["DATABASE_ADMIN_URL"]
+    },
+    "inbox:test": {
+      "dependsOn": ["@trustdesk/db#db:test"],
+      "cache": false,
+      "env": ["DATABASE_TEST_URL", "DATABASE_TEST_ADMIN_URL"]
+    },
+    "@trustdesk/api#dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["API_PORT", "WEB_ORIGIN", "DATABASE_URL"]
+    },
     "@trustdesk/web#dev": {
       "dependsOn": ["api:generate"],
       "cache": false,

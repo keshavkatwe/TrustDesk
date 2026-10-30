@@ -39,7 +39,7 @@ export function QuoteBreakdown({ quote }: { quote: NonNullable<InboxItem['quote'
       <CardContent className="flex flex-col gap-4">
         <Table>
           <TableCaption>
-            Seed catalogue v1.2. Amounts below are hand-authored fixtures.
+            Seed catalogue 2026-11-01. Amounts below are hand-authored fixtures.
           </TableCaption>
           <TableHeader>
             <TableRow>

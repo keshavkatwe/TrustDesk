@@ -18,6 +18,7 @@
         "@elysiajs/cors": "1.4.2",
         "@elysiajs/openapi": "1.4.16",
         "@trustdesk/core": "workspace:*",
+        "@trustdesk/db": "workspace:*",
         "elysia": "1.4.30",
         "zod": "4.6.7",
       },
@@ -62,6 +63,8 @@
       "version": "0.0.0",
       "dependencies": {
         "@trustdesk/db": "workspace:*",
+        "drizzle-orm": "0.45.4",
+        "zod": "4.6.7",
       },
     },
     "packages/db": {

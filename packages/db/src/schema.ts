@@ -6,11 +6,13 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgPolicy,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  unique,
 } from 'drizzle-orm/pg-core';
 
 function tenantPolicy(column: AnyPgColumn) {
@@ -143,6 +145,152 @@ export const catalogueRows = pgTable(
       'catalogue_rows_nonnegative',
       sql`${t.rentPerMonthMinor} >= 0 and ${t.buyMinor} >= 0 and ${t.perDayMinor} >= 0 and ${t.perShiftMinor} >= 0 and ${t.flatMinor} >= 0`,
     ),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const conversations = pgTable(
+  'conversations',
+  {
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    id: text('id').notNull(),
+    channel: text('channel', { enum: ['whatsapp', 'email', 'webform'] }).notNull(),
+    customer: text('customer').notNull(),
+    latestSequence: integer('latest_sequence').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    unique('conversations_customer_key').on(t.tenantId, t.channel, t.customer),
+    check('conversations_channel', sql`${t.channel} in ('whatsapp', 'email', 'webform')`),
+    check('conversations_sequence', sql`${t.latestSequence} > 0`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const messages = pgTable(
+  'messages',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    conversationId: text('conversation_id').notNull(),
+    sequence: integer('sequence').notNull(),
+    channel: text('channel', { enum: ['whatsapp', 'email', 'webform'] }).notNull(),
+    channelMessageId: text('channel_message_id').notNull(),
+    sourceEvent: text('source_event').notNull(),
+    body: text('body').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    unique('messages_delivery_key').on(t.tenantId, t.channel, t.channelMessageId),
+    unique('messages_conversation_sequence_key').on(t.tenantId, t.conversationId, t.sequence),
+    foreignKey({
+      columns: [t.tenantId, t.conversationId],
+      foreignColumns: [conversations.tenantId, conversations.id],
+    }),
+    check('messages_channel', sql`${t.channel} in ('whatsapp', 'email', 'webform')`),
+    check('messages_sequence', sql`${t.sequence} > 0`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const drafts = pgTable(
+  'drafts',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    messageId: text('message_id').notNull(),
+    version: integer('version').notNull().default(1),
+    revision: integer('revision').notNull().default(1),
+    status: text('status', {
+      enum: ['needs_approval', 'approved', 'rejected', 'handed_off', 'superseded'],
+    }).notNull(),
+    originalReply: text('original_reply').notNull(),
+    evidence: jsonb('evidence').notNull(),
+    provenance: text('provenance', { enum: ['sample'] })
+      .notNull()
+      .default('sample'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    unique('drafts_message_version_key').on(t.tenantId, t.messageId, t.version),
+    foreignKey({
+      columns: [t.tenantId, t.messageId],
+      foreignColumns: [messages.tenantId, messages.id],
+    }),
+    check(
+      'drafts_status',
+      sql`${t.status} in ('needs_approval','approved','rejected','handed_off','superseded')`,
+    ),
+    check('drafts_revision', sql`${t.version} > 0 and ${t.revision} > 0`),
+    check('drafts_sample', sql`${t.provenance} = 'sample'`),
+    index('drafts_inbox_idx').on(t.tenantId, t.status, t.createdAt),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const reviews = pgTable(
+  'reviews',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    draftId: text('draft_id').notNull(),
+    draftRevision: integer('draft_revision').notNull(),
+    approverId: text('approver_id').notNull(),
+    approverName: text('approver_name').notNull(),
+    action: text('action', { enum: ['approve', 'reject', 'hand_off'] }).notNull(),
+    originalReply: text('original_reply').notNull(),
+    reply: text('reply').notNull(),
+    reason: text('reason').notNull(),
+    editDiff: jsonb('edit_diff').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    unique('reviews_one_decision_key').on(t.tenantId, t.draftId),
+    unique('reviews_approved_reference_key').on(t.tenantId, t.id, t.action),
+    foreignKey({ columns: [t.tenantId, t.draftId], foreignColumns: [drafts.tenantId, drafts.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.approverId],
+      foreignColumns: [approvers.tenantId, approvers.id],
+    }),
+    index('reviews_approver_idx').on(t.tenantId, t.approverId),
+    check(
+      'reviews_input',
+      sql`${t.draftRevision} > 0 and length(btrim(${t.reply})) between 1 and 4000 and length(${t.reason}) <= 1000`,
+    ),
+    check(
+      'reviews_action',
+      sql`${t.action} in ('approve','reject','hand_off') and (${t.action} = 'approve' or length(btrim(${t.reason})) > 0)`,
+    ),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const outbox = pgTable(
+  'outbox',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    reviewId: text('review_id').notNull(),
+    action: text('action').notNull().default('approve'),
+    status: text('status', { enum: ['pending'] })
+      .notNull()
+      .default('pending'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    unique('outbox_one_intent_key').on(t.tenantId, t.reviewId),
+    foreignKey({
+      columns: [t.tenantId, t.reviewId, t.action],
+      foreignColumns: [reviews.tenantId, reviews.id, reviews.action],
+    }),
+    check('outbox_approval_only', sql`${t.action} = 'approve' and ${t.status} = 'pending'`),
     tenantPolicy(t.tenantId),
   ],
 );

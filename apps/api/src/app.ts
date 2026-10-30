@@ -1,12 +1,13 @@
 import { cors } from '@elysiajs/cors';
 import { openapi } from '@elysiajs/openapi';
+import type { InboxService } from '@trustdesk/core';
 import { Elysia } from 'elysia';
 import { z } from 'zod';
-import { createDemoModule } from './modules/demo/index.ts';
 import { health } from './modules/health/index.ts';
+import { createInboxModule } from './modules/inbox/index.ts';
 
 // Keep construction separate from listening so spec export needs no running services.
-export function createApp() {
+export function createApp(inboxService?: InboxService) {
   return new Elysia({ name: 'trustdesk-api' })
     .use(cors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:5173' }))
     .use(
@@ -18,6 +19,6 @@ export function createApp() {
         },
       }),
     )
-    .use(createDemoModule())
+    .use(createInboxModule(inboxService))
     .use(health);
 }

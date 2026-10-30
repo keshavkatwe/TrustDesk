@@ -20,15 +20,15 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 - `apps/api`: Elysia 1.x HTTP routes, Zod request/response validation, OpenAPI export. Keep routes thin and `.listen()` in the process entry point.
 - `apps/web`: React + Vite, React Router, Tailwind, stock shadcn/ui, TanStack Query, generated Hey API client, date-fns.
 - `apps/worker`: pg-boss consumers and worker lifecycle. Queue integration is planned, not implemented yet.
-- `packages/db`: PostgreSQL connection, Drizzle schema, migrations, seed loading and tenant-scoped database access. Foundation tables are implemented; message/draft/approval persistence is planned.
-- `packages/core`: business services shared by API and worker. AI, pricing, policy, approvals, and trust belong in modules here. Currently a placeholder.
+- `packages/db`: PostgreSQL connection, Drizzle schema, migrations, seed loading and tenant-scoped database access. Foundation and inbox workflow tables are implemented, including atomic reviews/outbox intent.
+- `packages/core`: business services shared by API and worker. AI, pricing, policy, approvals, and trust belong in modules here. Durable inbox/review services are implemented.
 - Applications do not import code from other applications. Backend packages do not depend on React or Elysia request context.
 - Do not add separate `ai`, `shared`, or UI workspace packages without a demonstrated need and a design update.
 
 ## API and frontend conventions
 
 - Follow [Elysia's best practices](https://elysiajs.com/essential/best-practice.html) with feature modules under `apps/api/src/modules/<feature>/`: `index.ts` is an Elysia controller, `model.ts` contains Zod HTTP schemas, and `service.ts` contains feature-local logic when needed. Keep tests beside their module. An Elysia instance is the controller; use inline handlers and pass only extracted values to services, never the full `Context`.
-- Keep shared business logic in `packages/core/src/<feature>/`, independent of Elysia and HTTP status objects. Controllers map service outcomes to HTTP responses. Request-dependent helpers may be Elysia plugins with explicit `.use()` dependencies; do not decorate the API with ordinary business services. Do not add empty service files or wrappers that merely forward to core. Stateful fixture modules use factories so each `createApp()` gets independent state.
+- Keep shared business logic in `packages/core/src/<feature>/`, independent of Elysia and HTTP status objects. Controllers map service outcomes to HTTP responses. Request-dependent helpers may be Elysia plugins with explicit `.use()` dependencies; do not decorate the API with ordinary business services. Do not add empty service files or wrappers that merely forward to core. Inject core services into module factories; never fall back to process-local review state.
 - Use Zod for application schemas: HTTP contracts, configuration, core inputs, and structured LLM outputs. Derive TypeScript types with `z.infer` rather than maintaining duplicate interfaces.
 - Elysia routes declare Zod request schemas, success/error response schemas, and stable `detail.operationId` values. Map Zod schemas to OpenAPI with `mapJsonSchema: { zod: z.toJSONSchema }`.
 - Follow `apps/api/src/app.ts` and `openapi-export.ts`: constructing/exporting the app must not require a database, an OpenAI key, or a listening server.
@@ -57,7 +57,7 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 
 ## Validation and evidence
 
-Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, fixture API, business-date and source-decimal unit tests, and builds without a database. `bun run db:test` separately exercises real Postgres migrations, seeds, constraints and restricted-role RLS against a matching `*_test` database with separate app/migration roles. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
+Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, HTTP contract, Unicode edit, business-date and source-decimal unit tests, and builds without a database. `bun run db:test` separately exercises real Postgres migrations, seeds, constraints, restricted-role RLS and durable approval races/rollback against a matching `*_test` database with separate app/migration roles. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.
 
 For API changes, regenerate the contract with `bun run api:generate`, inspect the spec, and exercise affected routes including rejection behavior. For UI behavior, verify the result in a browser. For database/concurrency changes, exercise real Postgres constraints, transactions, and the restricted application role.
 

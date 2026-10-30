@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckIcon, CornerUpRightIcon, PencilIcon, ShieldAlertIcon, XIcon } from 'lucide-react';
 import { useState } from 'react';
-import { getDemoInboxQueryKey, reviewDemoDraftMutation } from '@/api/@tanstack/react-query.gen';
-import type { GetDemoInboxResponse } from '@/api/types.gen';
+import { getInboxQueryKey, reviewDraftMutation } from '@/api/@tanstack/react-query.gen';
+import type { GetInboxResponse } from '@/api/types.gen';
 import { QuoteBreakdown } from '@/components/inbox/quote-breakdown';
 import { ReplyDiff } from '@/components/inbox/reply-diff';
 import { StatusBadge } from '@/components/inbox/status-badge';
@@ -61,13 +61,13 @@ export function ReviewPanel({
   const [action, setAction] = useState<Action | null>(null);
   const [reason, setReason] = useState('');
   const queryClient = useQueryClient();
-  const queryKey = getDemoInboxQueryKey({ path: { tenantId: tenant.id } });
+  const queryKey = getInboxQueryKey({ path: { tenantId: tenant.id } });
   const mutation = useMutation({
-    ...reviewDemoDraftMutation(),
+    ...reviewDraftMutation(),
     onSuccess: async (updated) => {
       await queryClient.cancelQueries({ queryKey });
       onReviewed();
-      queryClient.setQueryData<GetDemoInboxResponse>(
+      queryClient.setQueryData<GetInboxResponse>(
         queryKey,
         (current) =>
           current && {
@@ -93,7 +93,7 @@ export function ReviewPanel({
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={item.status} />
           <span className="text-xs text-muted-foreground">
-            Draft v{item.revision} · {item.sourceEvent}
+            Revision {item.revision} · {item.sourceEvent}
           </span>
         </div>
         <h2 className="text-lg font-semibold">{item.title}</h2>
@@ -149,13 +149,19 @@ export function ReviewPanel({
       {item.decision && (
         <Alert>
           <CheckIcon />
-          <AlertTitle>Sample decision recorded · {statuses[item.status]}</AlertTitle>
+          <AlertTitle>Decision saved · {statuses[item.status]}</AlertTitle>
           <AlertDescription>
             {item.decision.approverName} · {formatTimestamp(item.decision.at, tenant.timezone)}.{' '}
             {item.status === 'approved'
               ? 'The reply has not been sent.'
               : 'No customer message was sent.'}
             {item.decision.reason && <p>Reason: {item.decision.reason}</p>}
+            {item.outbox && (
+              <p className="mt-2 break-all text-xs">
+                Outbox · {item.outbox.status} · <bdi>{item.outbox.id}</bdi>. Delivery is not
+                connected.
+              </p>
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -261,7 +267,7 @@ export function ReviewPanel({
             <p className="text-xs text-muted-foreground">
               {!reviewer
                 ? 'Choose a named approver above to review this draft.'
-                : `Reviewing as ${reviewer.name}. Approval records a sample decision; it does not send a reply.`}
+                : `Reviewing as ${reviewer.name} · Approval saves the review and a pending outbox entry.`}
               {item.recommendedAction === 'hand_off' && ' Recommended action: hand off.'}
             </p>
           </CardFooter>
@@ -329,7 +335,7 @@ export function ReviewPanel({
               <h3>Recorded edit</h3>
             </CardTitle>
             <CardDescription>
-              Original and reviewed wording for this sample decision.
+              Original and reviewed wording saved with this decision.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -347,8 +353,8 @@ export function ReviewPanel({
           <DialogHeader>
             <DialogTitle>{action ? actionLabels[action] : 'Review draft'}</DialogTitle>
             <DialogDescription>
-              {reviewer?.name} · {tenant.shortName} · draft v{item.revision}. This records a sample
-              decision only.
+              {reviewer?.name} · {tenant.shortName} · revision {item.revision}. This decision will
+              be saved to the database.
             </DialogDescription>
           </DialogHeader>
           {changed ? (

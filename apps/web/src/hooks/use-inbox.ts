@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getDemoInboxOptions } from '@/api/@tanstack/react-query.gen';
+import { getInboxOptions } from '@/api/@tanstack/react-query.gen';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Tenant } from '@/types/api';
 
 export function useInbox(tenantId: Tenant['id']) {
-  const inbox = useQuery({ ...getDemoInboxOptions({ path: { tenantId } }), retry: false });
+  const inbox = useQuery({ ...getInboxOptions({ path: { tenantId } }), retry: false });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState('needs_approval');
   const [search, setSearch] = useState('');

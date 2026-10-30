@@ -4,12 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./inbox/model": "./src/inbox/model.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "inbox:seed": "bun src/inbox/seed.ts",
+    "inbox:test": "bun test ./test/"
   },
   "dependencies": {
-    "@trustdesk/db": "workspace:*"
+    "@trustdesk/db": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "zod": "4.6.7"
   }
 }

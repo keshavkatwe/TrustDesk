@@ -1,86 +1,70 @@
 # TrustDesk design
 
-Status: working design, 30 October 2026. The workspace and a fixture-backed inbox UI are implemented. Decisions marked **proposed** need implementation and measured evidence before they become claims about the system. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed).
+Status: 30 October 2026. A durable inbox and approval flow work with sample drafts. Inference, pricing/policy, replay/queue, dispatch and evaluations remain planned. Source: [Trust Desk Challenge v1.2](https://claude.ai/artifact/NvWejJ8j1TN8szJPnYJFFg#seed). **Agents draft; code decides.**
 
-## Architecture and trust boundaries
+## Architecture and boundaries
 
-Bun + Turborepo runs a Vite/React web app, Elysia API, and worker. PostgreSQL/Drizzle belongs in `packages/db`; shared backend services, including AI, belong in `packages/core`. Zod defines application schemas and inferred types. HTTP contracts use Elysia/Zod -> OpenAPI -> Hey API -> TanStack Query, with Zod's JSON Schema conversion registered in the OpenAPI plugin. LLM output will also use Zod and the official OpenAI SDK; model selection remains open until evaluated. UI uses the user's shadcn preset `b7BFf3k1o`: Radix Nova, Mist base/charts, Teal theme and Inter font, with semantic status badges.
+Bun/Turborepo: Vite/React web, Elysia API, worker; PostgreSQL/Drizzle in `packages/db`, shared backend services and future AI in `packages/core`. Zod defines schemas and inferred types. Elysia/Zod -> tracked OpenAPI -> Hey API -> TanStack Query. One structured OpenAI drafting call per message is planned; model selection remains open until evaluated. No agent framework or tool loops. Stock shadcn uses the approved Mist/Teal/Inter preset `b7BFf3k1o`.
 
 ```text
-Untrusted channel payload
-  -> API: authenticate adapter, resolve receiving tenant
-  -> Postgres transaction: receipt + unique message + queued work
-  -> Worker: tenant-scoped catalogue/context -> one LLM draft
-  -> UNTRUSTED model output -> schema/grounding/money/policy checks
-  -> low-risk auto-send OR named-person approval OR hand-off/drop
-  -> transactional outbox -> simulated dispatch + audit trail
+Implemented: Web -> Elysia inbox controller -> core service -> tenant-scoped Postgres
+             named review + edit + pending outbox intent share one transaction
 
-Owner UI -> API -> tenant/revision checks -> core services -> Postgres
+Planned:     untrusted event -> verify receiving tenant -> durable receipt/message/job
+             -> worker/tenant context -> untrusted LLM draft -> code checks
+             -> low-risk auto-send OR named review OR handoff/drop
+             -> outbox -> stale check -> simulated dispatch + audit
 ```
 
-Tenant data crosses the model-provider boundary only in that tenant's request. Business-owned records, citations, logs, and views remain tenant-scoped. Receiving-channel identity is distinct from the hard-coded demo approver identity.
+Elysia feature modules contain `index.ts` controllers and `model.ts` contracts; inbox contracts are shared core Zod schemas. Handlers extract inputs and map outcome codes to HTTP statuses. Core has no HTTP context/status objects. Process startup creates the application pool; constructing/exporting the app requires no database, listening socket or model key. Unconfigured/unavailable inboxes fail with a generic 503, without database details or an in-memory fallback.
 
-API structure follows Elysia's feature-module guidance: `modules/<feature>/index.ts` controllers, Zod `model.ts` contracts and optional feature-local `service.ts` logic. Inline handlers extract inputs and map outcomes to HTTP responses. Shared business services stay in `packages/core`, without Elysia context or HTTP status dependencies; `app.ts` composes modules and `index.ts` owns listening. The disposable demo service remains local to its module until durable core services replace it.
+All ten business tables force RLS. Non-superuser migration and runtime roles cannot bypass it; catalogues/configuration are runtime read-only. Parameterized `withTenant` sets transaction-local context on the pooled connection. Explicit filters and tenant-inclusive foreign keys remain. Tests exercise missing/wrong filters, cross-tenant references, rollback and pooled/concurrent context isolation. Receiving channel/destination pairs are globally unique. Original source data stays in `seed/`; catalogue hashes prevent changed prices under an existing version.
 
-Database foundation is implemented in `packages/db`: local Postgres 18.6, Drizzle migrations, bounded node-postgres pools, separate non-superuser application/migration roles, and forced RLS on tenants, approvers, receiving channels, catalogue versions and rows. `withTenant` sets transaction-local context; pooled reuse/concurrent contexts and intentionally missing filters are tested. Composite catalogue keys prevent cross-tenant references, and channel/destination pairs are globally unique. Catalogue source hashes prevent seed-price changes under an existing version; runtime catalogue access is read-only. Original seed files are preserved in `seed/`. Added short names/timezones are documented assumptions. Messages, drafts, decisions, runtime tenant discovery and API/database integration remain planned.
+## Implemented inbox and review
 
-## Current UI prototype
+Tables: tenants, approvers, receiving channels, catalogue versions/rows, conversations, messages, drafts, reviews, outbox. Messages deduplicate by tenant/channel/provider message ID; conversations have ordered message sequences. Drafts keep message/version identity, sample evidence, original wording and a separate record revision. One terminal review per draft stores the approver ID/name snapshot, original/edited wording, Unicode code point diff, reason and timestamp. One pending outbox entry references an approved review; database constraints reject intents for rejection/handoff.
 
-The user chose UI first: stock shadcn shell, business switcher, inbox search/status filters and a review panel. Six hand-authored scenarios cover both businesses, Arabic/mixed text, corrected quantities, discounts, outside-area handoff, required crew and budget overrun. Quote rows, extraction and hold reasons are illustrative fixtures, not inference or policy-engine output. Some seed messages are condensed and display times are illustrative.
+Review locks the conversation then draft, checks the tenant's named approver, pending state, record revision, latest message sequence and latest draft version. It conditionally advances the state and saves review/edit/outbox atomically. Concurrent app pools produce one winner. A forced outbox failure rolls back all three changes. Future ingestion/draft creation must use the same conversation lock before advancing sequences/versions. Dispatch still needs its own stale check and idempotency/reconciliation strategy.
 
-UI review changes: business switching lives in the sidebar footer; the header Sample badge, officer-status section and sample banner were removed at the user's request. Fixture disclosure remains beside drafts, decisions and quote evidence. The user selected [preset b7BFf3k1o](https://ui.shadcn.com/create?preset=b7BFf3k1o), replacing the earlier Blue/Geist choice with Mist/Teal/Inter. Semantic badge variants remain amber for pending, green for approved, red for rejected and blue for handoff. Component geometry stays Radix Nova.
+Six hand-authored drafts/evidence snapshots cover both tenants, Arabic/mixed language, corrected quantities, discounts, outside-area handoff, crew and budget overrun. The seed now imports exact original message bodies/senders/timestamps and validates receiving ownership. Draft extraction, reasons and quote arithmetic remain illustrative, not model or policy-engine output. Reseeding preserves decisions. Real application-process restart preserves a browser-approved Arabic edit and its outbox ID.
 
-The `/demo` API uses Zod/OpenAPI/Hey API. App-local memory records approve/reject/handoff decisions, named reviewers, original/edited replies and revision conflicts. It rejects cross-business message/approver IDs and superseded drafts. Restarting the API resets all decisions. The approver picker is simulated identity, not authentication; these checks do not prove database isolation or distributed concurrency safety. There is no dispatch, outbox, LLM call or durable record. Edits are not commercially revalidated yet. Quality & Trust, Activity and Settings remain visibly disabled. Tenant changes reset UI selection, filters, edits and reviewer identity.
+The local operator is explicitly allowed Qamar/Rimal; the approver picker is simulated identity, not production authentication. Edits are not commercially revalidated yet. Pending outbox means **not sent**; there is no dispatch consumer. These limits stay visible beside evidence and in README. No measured AI-quality or production-readiness claim is made.
 
-Web convention: reusable presentation in `components`, smart compositions in `widgets`, route entry points in `pages`, reusable behavior in `hooks`, non-React helpers in `libs`, and generated-contract aliases in `types`. React Router defines business-scoped `/businesses/:tenantId/inbox` routes with a shared layout and not-found views. Assumption: `/` opens the first available business. Business identity survives links/reloads/history; message selection and filters remain local. URL identity does not authorize API access. date-fns with `@date-fns/tz` formats API instants in the business timezone.
+Web: reusable `components`, smart `widgets`, route `pages`, `hooks`, non-React `libs`, generated-contract `types`. `/businesses/:tenantId/inbox` uses a shared layout; `/` opens the first allowed business. URLs do not authorize data access. Business switching resets reviewer, filters, selection and unsaved edits. date-fns/`@date-fns/tz` formats original instants in the business timezone. Added short names/timezones are documented assumptions. Quality & Trust, Activity and Settings stay disabled. The user's removed banners/status blocks remain removed; sample provenance stays beside drafts/quotes.
 
-## Planned flow and data model
+## Planned receive, money and policy
 
-Resolve the tenant from an authenticated receiving-channel mapping; ignore tenant claims in customer metadata. Replay is an explicitly local synthetic adapter. Persist receipts separately from messages; a unique `(tenant_id, channel, message_id)` claims work atomically. Queue publication shares the transaction or uses a recoverable transactional outbox. Acknowledge after durability, before inference.
+Authenticate the adapter and resolve tenant from its receiving destination; ignore customer `metadata.tenant_id`. Local replay is synthetic, not production authentication. Persist each event receipt separately from deduplicated messages. Claim work atomically; publish the job transactionally or through a recoverable outbox. Acknowledge durability before inference. Worker prompts/logs/context contain only the resolved tenant's data.
 
-The worker supplies only the tenant's versioned catalogue, rules, and relevant conversation context to one structured drafting call. Code validates citations, quantities and units, recomputes money, and chooses `auto_send`, `needs_approval`, `hand_off`, or `drop`, with reasons. Track conversation revisions so a newer message supersedes an older pending draft. Approval and dispatch both recheck staleness.
+The worker supplies versioned catalogue, rules and conversation context to one structured drafting call. Code validates references, quantities/units and grounding, recomputes money and chooses `auto_send`, `needs_approval`, `hand_off` or `drop` with reasons. Models cannot authorize prices, discounts, availability, delivery, sends or promotion. Render commercial values from computed facts; hold claims that cannot be validated.
 
-Planned records: tenants/channel mappings/approvers; catalogue versions and rows; conversations/messages/event receipts; agent versions/draft revisions/policy results; approvals/edit diffs/outbox/audit events; gold-set versions/eval runs/results/trust events. Business-owned foreign keys include tenant identity. Approval uses a conditional state transition and a unique terminal decision; approval plus outbox intent is atomic. Outbox uniqueness prevents duplicate simulated dispatch. Production delivery would additionally need provider idempotency or reconciliation.
-
-Extend the foundation's RLS, composite-key and role separation to future message/approval tables. Tests must exercise the restricted role, including pooled-connection reuse. Durable failures stay visible and replayable.
-
-## Tenant rules, money, and assumptions
-
-| Tenant | Configured rules from the seed |
+| Tenant | Source rules |
 | --- | --- |
-| Qamar | AED, 5% VAT, discount approval at >=10%, Dubai/Sharjah, low-risk auto-send enabled. Rentals >12 months escalate; delivery/setup is once per order. |
-| Rimal | SAR, 15% VAT, discount approval at >=5%, Riyadh, auto-send off, minimum SAR 2,000 before VAT. Required crew for stage >12 m², screen >6 m², or any tent. |
+| Qamar | AED; VAT 5%; discount approval >=10%; Dubai/Sharjah; low-risk auto-send enabled; rental >12 months escalates; delivery/setup once per order |
+| Rimal | SAR; VAT 15%; discount approval >=5%; Riyadh; auto-send off; SAR 2,000 minimum before VAT; crew for stage >12 m², screen >6 m² or any tent |
 
-Proposed assumptions: firm quotes, discounts, availability and delivery promises require approval; clarification and non-committing FAQ replies may be low-risk. Unknown products are clarified without silent substitution. Add delivery only when applicable and record the trip assumption. Apply the minimum order after discounts, before VAT. Do not invent a discount percentage from a request for a better price.
+Proposed assumptions: firm commitments need named approval; non-committing clarification/FAQ may be low-risk. Unknown products need clarification, without substitution. Apply minimum after discounts/before VAT; do not invent a discount from “better price.” Confirm delivery trips rather than silently assuming. Exact decimal calculations produce integer minor units; round discount and invoice VAT half-up to two decimals, then sum. Version rounding policy. Resolve relative dates against message timestamp/business timezone.
 
-Store catalogue/final amounts in integer fils/halalas. Calculate fractional quantities, discounts and VAT with decimal arithmetic; round discount and invoice-level VAT half-up to two decimals, then sum the rounded components. Version this policy. Resolve relative dates against the message timestamp and tenant timezone. Preserve relevant context for customer corrections.
+Normalize Arabic-Indic digits for extraction. Reply in the customer's primary language; proposed Arabizi fallback is Arabic, balanced bilingual fallback the tenant preference. Isolate LTR SKUs/money/dates inside RTL text. Evaluate ambiguous language slices separately.
 
-Reply in the customer's primary language; proposed fallback for genuine Arabizi is Arabic, and for balanced Arabic/English input is the tenant's preferred language. Normalize Arabic-Indic digits for extraction. Use RTL Arabic text with isolated LTR SKUs, amounts, and dates. Keep ambiguous language cases supervised and evaluate the language slices separately.
+## Planned evidence, trust and threats
 
-## Code, judge, and trust
+Code owns hard checks and send eligibility. A judge scores three dimensions—intent understanding, helpfulness/completeness, language appropriateness—with reasons and `not_assessable`; it cannot override code. Build >=30 versioned cases, human-label >=10 real outputs, report agreement/disagreements honestly, and pin agent/catalogue/case/judge versions. Store genuine baseline/degraded runs for a key-free demo; no synthetic labels masquerade as calibration.
 
-Code owns schema/reference checks, tenant ownership, arithmetic, required fees, configured rules, state transitions and send eligibility. Render commercial amounts from computed facts; free-text claims that cannot be safely validated remain held. An LLM judge scores intent understanding, helpfulness/completeness, and language appropriateness, with rationales and `not_assessable`; it cannot override code.
+Proposed bar: zero hard violations and >=95% assessed passes per tenant/agent version, with coverage; unassessable is not a pass. Hard failures, threshold failures or category regressions block acceptance and demote that version to supervised. A named human alone promotes; versions do not inherit promotion. Auto-send additionally requires low-risk output and tenant configuration, so autonomous trust cannot override Rimal's setting. Rejected candidates cannot overwrite accepted baselines. Seed memorization, weak commitment checks, judge self-agreement and aggregate scores hiding weak Arabic require unseen paraphrases, adversarial slices and human review.
 
-Proposed trust threshold: zero hard-rule violations and >=95% assessed case passes per tenant/version, with coverage reported; unassessable results are not passes. Any hard violation or threshold failure demotes that officer/version to supervised. A named human alone promotes; new versions do not inherit promotion. False demotion costs review time; false promotion risks business commitments and disclosure, so uncertain results stay supervised. Rimal still requires approval when trust is autonomous.
-
-Build >=30 tagged cases with expected properties across tenants, languages and failure categories. Human-label >=10 real outputs; report agreement, disagreements and rubric changes honestly. Pin agent, catalogue, case-set and judge versions. The regression command compares a candidate with the last accepted baseline on the same cases, blocks hard failures, threshold failures or category regressions, and stores the degraded candidate's demotion. A rejected candidate does not overwrite the accepted version. Store genuine baseline/degraded runs for the key-free UI.
-
-Evals can be fooled by seed memorization, lexical language checks, incomplete commitment detection, judge self-agreement and aggregate scores hiding weak Arabic. Add unseen paraphrases, adversarial cases, sliced metrics and human samples; passing the finite suite is evidence, not proof of every possible reply.
-
-## Five priority threats
-
-| Threat | Planned control and evidence |
+| Threat | Planned control / evidence |
 | --- | --- |
-| Forged tenant identity | Verified destination mapping; `evt_0011` stays Rimal despite Qamar metadata. |
-| Cross-tenant disclosure | Scoped queries/prompts/logs, composite keys, RLS, canaries and deliberate filter-break test; probe `evt_0010`. |
-| Prompt injection | Untrusted customer/model boundaries, no tools, bounded schema, code policy and held unverified commitments; probe `evt_0006`. |
-| Duplicate or stale execution | Unique message/outbox keys, transactional decisions and revision checks; concurrent replay, approval races, `evt_0003/0004`. |
-| Incorrect commercial promises | Source-derived decimal calculations, mandatory fees, named approvals and controlled reply rendering; test budget/crew cases. |
+| Forged identity | Verified destination, not metadata (`evt_0011`) |
+| Cross-tenant disclosure | Scoped queries/prompts/logs, composite keys, forced RLS, canaries, deliberate filter-break (`evt_0010`); database portion implemented |
+| Injection | Untrusted customer/model boundaries, no tools, bounded schema, held unverified claims (`evt_0006`) |
+| Duplicate/stale work | Unique keys, transactions, revisions, approval/dispatch checks (`evt_0003/0004`); review races/constraints implemented |
+| Wrong commitments | Source-derived money, mandatory fees, controlled wording, named approvals; pricing engine pending |
 
-## Depth, scale, and delivery
+## Delivery priority
 
-Proposed depth: **A, failure handling**, and **B, isolation**. A adds bounded backoff, circuit breaker, global/tenant kill switches, daily spend reservations and a one-third-failure chaos run. B adds canaries and database isolation evidence. Both deepen the core reliability requirements; a third module earns no extra credit.
+The deadline is 30 October, extendable to 31 October. Prioritize demonstrable value: durable review is complete for sample drafts; next build receive/dedupe, deterministic pricing/policy and one drafting step, followed by simulated dispatch and measured eval/trust evidence. Complete a thin spine before optional depth or extra screens. Keep the working sample flow runnable without a provider key.
 
-At 200 tenants/50,000 messages a day, inspect inference concurrency, provider limits, tenant fairness and database/queue pool contention first. Bound each tenant's in-flight jobs and spend, separate worker capacity, index tenant/status/time access paths, and retain aggregate metrics while archiving large run payloads.
+Proposed depth A: bounded backoff/circuit breaker, kill switches, daily spend reservations and a one-third-failure chaos run. Depth B: canaries and deeper isolation evidence. Cut live integrations, production login/deployment, cosmetic work and a third depth module. At 200 tenants/50,000 messages daily, bound tenant concurrency/spend, inspect provider limits and pool/queue contention, then archive large payloads while retaining metrics.
 
-Current: workspace, health endpoint, fixture-backed inbox/review UI, business-scoped web routes, database foundation/seeds, spec/client generation and lint/typechecks/unit/integration tests/builds. Next: durable inbox/review services; receive/queue/dedupe; draft/pricing/policy; approval/outbox/trails; evals/trust/depth. Keep a complete thin spine before optional depth. Cut live integrations, production auth/deployment and cosmetic work. Submission docs remain short: README, this design (target <=3 pages), handler review, AI log, six-week team plan, and an 8–12 minute walkthrough. No production-readiness or measured AI-quality claim is made yet.
+Submission: concise README/design, handler review, actual AI log, six-week team plan and an 8–12 minute walkthrough. `REVIEW.md` and `TEAM-PLAN.md` remain unwritten. Prioritize verifiable coverage and explicit omissions over claiming the entire challenge is complete.

@@ -1,9 +1,5 @@
-import type {
-  GetDemoInboxResponse,
-  GetDemoWorkspaceResponse,
-  ReviewDemoDraftData,
-} from '@/api/types.gen';
+import type { GetInboxResponse, GetWorkspaceResponse, ReviewDraftData } from '@/api/types.gen';
 
-export type Tenant = GetDemoWorkspaceResponse['tenants'][number];
-export type InboxItem = GetDemoInboxResponse['items'][number];
-export type Action = ReviewDemoDraftData['body']['action'];
+export type Tenant = GetWorkspaceResponse['tenants'][number];
+export type InboxItem = GetInboxResponse['items'][number];
+export type Action = ReviewDraftData['body']['action'];

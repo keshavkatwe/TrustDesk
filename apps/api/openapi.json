@@ -6,13 +6,13 @@
   },
   "openapi": "3.1.2",
   "paths": {
-    "/demo/workspace": {
+    "/workspace": {
       "get": {
-        "operationId": "getDemoWorkspace",
+        "operationId": "getWorkspace",
         "tags": [
-          "demo"
+          "inbox"
         ],
-        "summary": "Sample businesses and approvers (no authentication)",
+        "summary": "Businesses available to the local operator (no production login)",
         "responses": {
           "200": {
             "description": "Response for status 200",
@@ -110,17 +110,37 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
     },
-    "/demo/tenants/{tenantId}/inbox": {
+    "/tenants/{tenantId}/inbox": {
       "get": {
-        "operationId": "getDemoInbox",
+        "operationId": "getInbox",
         "tags": [
-          "demo"
+          "inbox"
         ],
-        "summary": "Hand-authored inbox scenarios",
+        "summary": "Persisted messages, sample drafts, reviews and pending outbox entries",
         "parameters": [
           {
             "name": "tenantId",
@@ -390,6 +410,30 @@
                               "null"
                             ]
                           },
+                          "outbox": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "const": "pending"
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "status",
+                              "createdAt"
+                            ],
+                            "additionalProperties": false
+                          },
                           "decision": {
                             "type": [
                               "object",
@@ -418,6 +462,28 @@
                               },
                               "reason": {
                                 "type": "string"
+                              },
+                              "editDiff": {
+                                "type": "object",
+                                "properties": {
+                                  "start": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "removed": {
+                                    "type": "string"
+                                  },
+                                  "added": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "start",
+                                  "removed",
+                                  "added"
+                                ],
+                                "additionalProperties": false
                               }
                             },
                             "required": [
@@ -426,7 +492,8 @@
                               "at",
                               "originalReply",
                               "reply",
-                              "reason"
+                              "reason",
+                              "editDiff"
                             ],
                             "additionalProperties": false
                           }
@@ -451,6 +518,7 @@
                           "revision",
                           "recommendedAction",
                           "supersededBy",
+                          "outbox",
                           "decision"
                         ],
                         "additionalProperties": false
@@ -459,6 +527,26 @@
                   },
                   "required": [
                     "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
                   ],
                   "additionalProperties": false
                 }
@@ -484,17 +572,37 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
     },
-    "/demo/tenants/{tenantId}/inbox/{id}/review": {
+    "/tenants/{tenantId}/inbox/{id}/review": {
       "post": {
-        "operationId": "reviewDemoDraft",
+        "operationId": "reviewDraft",
         "tags": [
-          "demo"
+          "inbox"
         ],
-        "summary": "Simulate a review decision in memory; never sends a reply",
+        "summary": "Save a named review and edit diff; approval atomically creates a pending outbox entry",
         "parameters": [
           {
             "name": "tenantId",
@@ -899,6 +1007,30 @@
                         "null"
                       ]
                     },
+                    "outbox": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "const": "pending"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    },
                     "decision": {
                       "type": [
                         "object",
@@ -927,6 +1059,28 @@
                         },
                         "reason": {
                           "type": "string"
+                        },
+                        "editDiff": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "removed": {
+                              "type": "string"
+                            },
+                            "added": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "start",
+                            "removed",
+                            "added"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -935,7 +1089,8 @@
                         "at",
                         "originalReply",
                         "reply",
-                        "reason"
+                        "reason",
+                        "editDiff"
                       ],
                       "additionalProperties": false
                     }
@@ -960,6 +1115,7 @@
                     "revision",
                     "recommendedAction",
                     "supersededBy",
+                    "outbox",
                     "decision"
                   ],
                   "additionalProperties": false
@@ -1029,6 +1185,26 @@
           },
           "422": {
             "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
             "content": {
               "application/json": {
                 "schema": {

@@ -22,8 +22,8 @@ export const ReviewInput = z.object({
   reply: z.string().trim().min(1).max(4000),
   reason: z.string().trim().max(1000),
 });
-const Money = z.number().int().nonnegative();
-const Quote = z.object({
+const Money = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+export const Quote = z.object({
   currency: z.enum(['AED', 'SAR']),
   vatPercent: z.number(),
   lines: z.array(
@@ -64,6 +64,9 @@ export const InboxItem = z.object({
   revision: z.number().int().positive(),
   recommendedAction: ReviewAction,
   supersededBy: z.string().nullable(),
+  outbox: z
+    .object({ id: z.string(), status: z.literal('pending'), createdAt: z.string() })
+    .nullable(),
   decision: z
     .object({
       action: ReviewAction,
@@ -72,12 +75,28 @@ export const InboxItem = z.object({
       originalReply: z.string(),
       reply: z.string(),
       reason: z.string(),
+      editDiff: z.object({
+        start: z.number().int().nonnegative(),
+        removed: z.string(),
+        added: z.string(),
+      }),
     })
     .nullable(),
 });
 export const Workspace = z.object({ tenants: z.array(Tenant) });
 export const Inbox = z.object({ items: z.array(InboxItem) });
-export const DemoError = z.object({ message: z.string() });
+export const InboxError = z.object({ message: z.string() });
 export type Tenant = z.infer<typeof Tenant>;
 export type InboxItem = z.infer<typeof InboxItem>;
 export type ReviewInput = z.infer<typeof ReviewInput>;
+export const DraftEvidence = InboxItem.pick({
+  title: true,
+  language: true,
+  context: true,
+  extracted: true,
+  missing: true,
+  reasons: true,
+  quote: true,
+  recommendedAction: true,
+  supersededBy: true,
+});

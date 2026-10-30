@@ -15,6 +15,20 @@
       "when": 1793340377497,
       "tag": "0001_tenant_security",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793352091898,
+      "tag": "0002_chemical_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793352092252,
+      "tag": "0003_inbox_permissions",
+      "breakpoints": true
     }
   ]
 }

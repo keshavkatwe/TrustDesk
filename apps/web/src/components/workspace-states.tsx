@@ -6,9 +6,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function LoadError({ onRetry }: { onRetry: () => void }) {
   return (
     <Alert variant="destructive">
-      <AlertTitle>Couldn’t load the sample workspace</AlertTitle>
+      <AlertTitle>Couldn’t load the workspace</AlertTitle>
       <AlertDescription className="flex flex-col items-start gap-3">
-        <p>Check that the API is running, then try again.</p>
+        <p>Check that the API and database are running, then try again.</p>
         <Button variant="outline" onClick={onRetry}>
           <RefreshCwIcon data-icon="inline-start" />
           Retry
