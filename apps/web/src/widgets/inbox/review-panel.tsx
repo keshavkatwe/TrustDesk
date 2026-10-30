@@ -32,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatTimestamp } from '@/libs/date';
 import { statuses } from '@/libs/inbox';
 import type { Action, InboxItem, Tenant } from '@/types/api';
+import { GenerateDraft } from './generate-draft';
 
 const actionLabels: Record<Action, string> = {
   approve: 'Approve reply',
@@ -79,8 +80,13 @@ export function ReviewPanel({
   });
   const reviewer = tenant.approvers.find((person) => person.id === approverId);
   const reviewable = item.status === 'needs_approval';
+  const preparing =
+    item.provenance === 'received' &&
+    (item.processingState === 'queued' || item.processingState === 'processing');
+  const approvalBlocked = !item.assessment || item.assessment.blockApproval;
   const changed = reply.trim() !== item.draftReply;
   const validReply = reply.trim().length > 0 && reply.trim().length <= 4000;
+  const generation = item.draftGeneration;
   function startReview(next: Action) {
     mutation.reset();
     setReason('');
@@ -91,9 +97,15 @@ export function ReviewPanel({
     <div className="mx-auto flex max-w-5xl flex-col gap-5 p-4 md:p-6">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={item.status} />
+          <StatusBadge
+            status={item.status}
+            processingState={item.processingState}
+            outboxStatus={item.outbox?.status}
+          />
+          {item.assessment && <Badge variant="info">Pricing & policy checked</Badge>}
+          {item.provenance === 'openai' && <Badge>AI prepared</Badge>}
           <span className="text-xs text-muted-foreground">
-            Revision {item.revision} · {item.sourceEvent}
+            Draft v{item.draftVersion} · Revision {item.revision} · {item.sourceEvent}
           </span>
         </div>
         <h2 className="text-lg font-semibold">{item.title}</h2>
@@ -118,9 +130,9 @@ export function ReviewPanel({
       {item.status === 'superseded' ? (
         <Alert>
           <ShieldAlertIcon />
-          <AlertTitle>Replaced by a newer customer message</AlertTitle>
+          <AlertTitle>Replaced by a newer message or draft</AlertTitle>
           <AlertDescription className="flex flex-col items-start gap-3">
-            Review the updated quantity before taking any action.
+            Open the current draft before taking any action.
             {item.supersededBy && (
               <Button
                 variant="outline"
@@ -135,13 +147,22 @@ export function ReviewPanel({
         reviewable && (
           <Alert>
             <ShieldAlertIcon />
-            <AlertTitle>Human review required</AlertTitle>
+            <AlertTitle>
+              {preparing
+                ? 'Preparing a reply'
+                : approvalBlocked
+                  ? 'Approval blocked by policy'
+                  : 'Human review required'}
+            </AlertTitle>
             <AlertDescription>
               <ul className="flex list-disc flex-col gap-1 pl-4">
-                {item.reasons.map((entry) => (
+                {item.reasons.slice(0, 3).map((entry) => (
                   <li key={entry.title}>{entry.title}</li>
                 ))}
               </ul>
+              {item.reasons.length > 3 && (
+                <p>{item.reasons.length - 3} more checks in Review evidence below.</p>
+              )}
             </AlertDescription>
           </Alert>
         )
@@ -149,17 +170,31 @@ export function ReviewPanel({
       {item.decision && (
         <Alert>
           <CheckIcon />
-          <AlertTitle>Decision saved · {statuses[item.status]}</AlertTitle>
+          <AlertTitle>
+            Decision saved ·{' '}
+            {item.outbox?.status === 'simulated_sent'
+              ? 'Sent · simulated'
+              : item.outbox?.status === 'cancelled'
+                ? 'Send cancelled'
+                : statuses[item.status]}
+          </AlertTitle>
           <AlertDescription>
             {item.decision.approverName} · {formatTimestamp(item.decision.at, tenant.timezone)}.{' '}
             {item.status === 'approved'
-              ? 'The reply has not been sent.'
+              ? item.outbox?.status === 'simulated_sent'
+                ? 'The approved reply was recorded by the local simulator. No real customer was contacted.'
+                : item.outbox?.status === 'cancelled'
+                  ? 'The simulated send was cancelled.'
+                  : 'Waiting for simulated sending by the worker.'
               : 'No customer message was sent.'}
             {item.decision.reason && <p>Reason: {item.decision.reason}</p>}
             {item.outbox && (
               <p className="mt-2 break-all text-xs">
-                Outbox · {item.outbox.status} · <bdi>{item.outbox.id}</bdi>. Delivery is not
-                connected.
+                {item.outbox.status === 'simulated_sent'
+                  ? `Simulation ID: ${item.outbox.simulatedMessageId}`
+                  : item.outbox.status === 'cancelled'
+                    ? item.outbox.reason
+                    : `Outbox: ${item.outbox.id}`}
               </p>
             )}
           </AlertDescription>
@@ -170,7 +205,10 @@ export function ReviewPanel({
           <CardTitle>
             <h3>Customer message</h3>
           </CardTitle>
-          <CardDescription>Seed scenario · {item.sourceEvent}</CardDescription>
+          <CardDescription>
+            {item.provenance === 'sample' ? 'Seed scenario' : 'Incoming message'} ·{' '}
+            {item.sourceEvent}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="whitespace-pre-wrap text-sm leading-relaxed" dir="auto">
@@ -194,10 +232,18 @@ export function ReviewPanel({
           </CardTitle>
           <CardDescription>
             {reviewable
-              ? 'Sample draft · review the wording and evidence before approval.'
+              ? item.assessment
+                ? item.provenance === 'openai'
+                  ? 'AI extracted the request. Code calculated the quote and assembled this reply. Review the interpretation before approval.'
+                  : 'Template reply · amounts and rules checked by code. Request extraction is still a sample.'
+                : item.provenance === 'received'
+                  ? preparing
+                    ? 'The message is saved. The background worker is preparing the draft.'
+                    : 'Drafting did not complete. Retry generation or hand this enquiry to a person.'
+                  : 'Legacy sample · no computed assessment; hand off or regenerate before approval.'
               : 'Read-only · this draft no longer accepts decisions.'}
           </CardDescription>
-          {reviewable && (
+          {reviewable && !preparing && (
             <CardAction>
               <Button variant="outline" size="sm" onClick={() => setEditing(!editing)}>
                 <PencilIcon data-icon="inline-start" />
@@ -207,6 +253,25 @@ export function ReviewPanel({
           )}
         </CardHeader>
         <CardContent>
+          {reviewable && !preparing && (
+            <div className="mb-4">
+              <GenerateDraft item={item} hasUnsavedEdits={changed} onSelect={onSelect} />
+            </div>
+          )}
+          {item.provenance === 'openai' && generation && (
+            <p className="mb-4 break-all text-xs text-muted-foreground">
+              {generation.model} · {generation.promptVersion}
+              {generation.usage && (
+                <>
+                  {' '}
+                  · {generation.usage.inputTokens + generation.usage.outputTokens} tokens ·{' '}
+                  {generation.usage.estimatedCostUsd
+                    ? `estimated USD ${generation.usage.estimatedCostUsd}`
+                    : 'cost unavailable'}
+                </>
+              )}
+            </p>
+          )}
           {editing ? (
             <FieldGroup>
               <Field data-invalid={!validReply}>
@@ -224,7 +289,7 @@ export function ReviewPanel({
                 <FieldDescription>
                   {!validReply
                     ? 'A reply is required.'
-                    : 'Your edits will be shown before approval.'}{' '}
+                    : 'Edits are recorded. Commercial numbers require a new calculation.'}{' '}
                   {reply.length}/4,000 characters.
                 </FieldDescription>
               </Field>
@@ -242,7 +307,10 @@ export function ReviewPanel({
         {reviewable && (
           <CardFooter className="flex-col items-stretch gap-3">
             <div className="flex flex-wrap gap-2">
-              <Button disabled={!reviewer || !validReply} onClick={() => startReview('approve')}>
+              <Button
+                disabled={!reviewer || !validReply || approvalBlocked}
+                onClick={() => startReview('approve')}
+              >
                 <CheckIcon data-icon="inline-start" />
                 Approve reply
               </Button>
@@ -267,7 +335,8 @@ export function ReviewPanel({
             <p className="text-xs text-muted-foreground">
               {!reviewer
                 ? 'Choose a named approver above to review this draft.'
-                : `Reviewing as ${reviewer.name} · Approval saves the review and a pending outbox entry.`}
+                : `Reviewing as ${reviewer.name} · Approval queues this reply for simulated sending.`}
+              {approvalBlocked && ' Approval is blocked; reject or hand off this request.'}
               {item.recommendedAction === 'hand_off' && ' Recommended action: hand off.'}
             </p>
           </CardFooter>
@@ -279,7 +348,9 @@ export function ReviewPanel({
             <h3>Request details</h3>
           </CardTitle>
           <CardDescription>
-            Illustrative extraction from the seed message and conversation.
+            {item.provenance === 'openai'
+              ? 'AI interpretation of this message and its conversation. Check it against the customer’s wording.'
+              : 'Illustrative extraction from the seed message and conversation.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -308,13 +379,17 @@ export function ReviewPanel({
           )}
         </CardContent>
       </Card>
-      {item.quote && <QuoteBreakdown quote={item.quote} />}
+      {item.quote && <QuoteBreakdown quote={item.quote} assessment={item.assessment} />}
       <Card>
         <CardHeader>
           <CardTitle>
             <h3>Review evidence</h3>
           </CardTitle>
-          <CardDescription>Seed references and hand-authored hold reasons.</CardDescription>
+          <CardDescription>
+            {item.assessment
+              ? `Computed policy reasons · ${item.assessment.engineVersion} · catalogue ${item.assessment.catalogueVersion}`
+              : 'Legacy sample references and hand-authored hold reasons.'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {item.reasons.map((entry) => (
@@ -409,6 +484,7 @@ export function ReviewPanel({
                 mutation.isPending ||
                 !reviewer ||
                 !validReply ||
+                (action === 'approve' && approvalBlocked) ||
                 (action !== 'approve' && !reason.trim())
               }
               onClick={() =>

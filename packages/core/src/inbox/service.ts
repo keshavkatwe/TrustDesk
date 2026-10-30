@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import {
-  approvers,
-  conversations,
   type Database,
   drafts,
-  messages,
   outbox,
   reviews,
   type TenantTransaction,
-  tenants,
   withTenant,
 } from '@trustdesk/db';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { loadPricingContext } from '../pricing/context.ts';
+import { evaluateRequest } from '../pricing/evaluate.ts';
+import { sameCommercialFacts } from '../pricing/render.ts';
+import { lockConversation, lockDraft } from './locks.ts';
 import { DraftEvidence, Inbox, InboxItem, ReviewInput, Workspace } from './model.ts';
 import { replyDiff } from './reply-diff.ts';
 
@@ -19,43 +19,76 @@ export type ReviewResult =
   | { ok: true; item: InboxItem }
   | {
       ok: false;
-      code: 'not_found' | 'invalid_request' | 'invalid_approver' | 'conflict' | 'reason_required';
+      code:
+        | 'not_found'
+        | 'invalid_request'
+        | 'invalid_approver'
+        | 'conflict'
+        | 'reason_required'
+        | 'policy_blocked';
       message: string;
     };
 
 async function readItems(tx: TenantTransaction, tenantId: string, id?: string) {
-  const data = await tx
-    .select({
-      draft: drafts,
-      message: messages,
-      conversation: conversations,
-      review: reviews,
-      intent: outbox,
-    })
-    .from(drafts)
-    .innerJoin(
-      messages,
-      and(eq(messages.tenantId, drafts.tenantId), eq(messages.id, drafts.messageId)),
-    )
-    .innerJoin(
-      conversations,
-      and(
-        eq(conversations.tenantId, messages.tenantId),
-        eq(conversations.id, messages.conversationId),
-      ),
-    )
-    .leftJoin(reviews, and(eq(reviews.tenantId, drafts.tenantId), eq(reviews.draftId, drafts.id)))
-    .leftJoin(outbox, and(eq(outbox.tenantId, reviews.tenantId), eq(outbox.reviewId, reviews.id)))
-    .where(
-      id ? and(eq(drafts.tenantId, tenantId), eq(drafts.id, id)) : eq(drafts.tenantId, tenantId),
-    )
-    .orderBy(desc(messages.receivedAt), desc(drafts.version));
-  return data.map(({ draft, message, conversation, review, intent }) =>
-    InboxItem.parse({
+  const runColumns = {
+    id: true,
+    status: true,
+    model: true,
+    promptVersion: true,
+    errorCode: true,
+    responseId: true,
+    usage: true,
+    durationMs: true,
+    createdAt: true,
+  } as const;
+  const data = await tx.query.drafts.findMany({
+    where: (draft, { and, eq }) =>
+      id ? and(eq(draft.tenantId, tenantId), eq(draft.id, id)) : eq(draft.tenantId, tenantId),
+    with: {
+      message: {
+        with: {
+          conversation: true,
+          aiRuns: {
+            columns: runColumns,
+            where: (run, { eq }) => eq(run.tenantId, tenantId),
+            orderBy: (run, { desc }) => desc(run.createdAt),
+            limit: 1,
+          },
+        },
+      },
+      review: { with: { outbox: { with: { delivery: true } } } },
+      resultRuns: {
+        columns: runColumns,
+        where: (run, { eq }) => eq(run.tenantId, tenantId),
+        orderBy: (run, { desc }) => desc(run.createdAt),
+        limit: 1,
+      },
+    },
+  });
+  // Inbox ordering uses the related message's timestamp, then the draft version.
+  data.sort(
+    (a, b) =>
+      b.message.receivedAt.getTime() - a.message.receivedAt.getTime() || b.version - a.version,
+  );
+  return data.map((draft) => {
+    const { message, review } = draft;
+    const { conversation } = message;
+    const intent = review?.outbox;
+    const delivery = intent?.delivery;
+    const latestRun = message.aiRuns[0];
+    const originatingRun = draft.resultRuns[0];
+    return InboxItem.parse({
       ...DraftEvidence.parse(draft.evidence),
       id: draft.id,
       tenantId,
       sourceEvent: message.sourceEvent,
+      provenance: draft.provenance,
+      processingState: message.processingState,
+      draftVersion: draft.version,
+      generation: latestRun ? { ...latestRun, createdAt: latestRun.createdAt.toISOString() } : null,
+      draftGeneration: originatingRun
+        ? { ...originatingRun, createdAt: originatingRun.createdAt.toISOString() }
+        : null,
       customer: conversation.customer,
       channel:
         message.channel === 'whatsapp'
@@ -80,10 +113,17 @@ async function readItems(tx: TenantTransaction, tenantId: string, id?: string) {
           }
         : null,
       outbox: intent
-        ? { id: intent.id, status: intent.status, createdAt: intent.createdAt.toISOString() }
+        ? {
+            id: intent.id,
+            status: delivery?.status ?? intent.status,
+            createdAt: intent.createdAt.toISOString(),
+            completedAt: delivery?.createdAt.toISOString() ?? null,
+            reason: delivery?.reason ?? null,
+            simulatedMessageId: delivery?.simulatedMessageId ?? null,
+          }
         : null,
-    }),
-  );
+    });
+  });
 }
 
 // The caller supplies the local operator's allowed businesses. This is not production authentication.
@@ -94,13 +134,30 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
       const businesses = await Promise.all(
         [...allowed].map((tenantId) =>
           withTenant(database, tenantId, async (tx) => {
-            const [tenant] = await tx.select().from(tenants).where(eq(tenants.id, tenantId));
+            const tenant = await tx.query.tenants.findFirst({
+              where: (tenant, { eq }) => eq(tenant.id, tenantId),
+              columns: {
+                id: true,
+                name: true,
+                shortName: true,
+                location: true,
+                timezone: true,
+                currency: true,
+                autoSend: true,
+              },
+              with: {
+                approvers: {
+                  columns: { id: true, name: true, role: true },
+                  where: (actor, { eq }) => eq(actor.tenantId, tenantId),
+                  orderBy: (actor, { asc }) => asc(actor.id),
+                },
+                receivingChannels: {
+                  columns: { channel: true, address: true },
+                  where: (channel, { eq }) => eq(channel.tenantId, tenantId),
+                },
+              },
+            });
             if (!tenant) return undefined;
-            const people = await tx
-              .select()
-              .from(approvers)
-              .where(eq(approvers.tenantId, tenantId))
-              .orderBy(approvers.id);
             return {
               id: tenant.id,
               name: tenant.name,
@@ -110,7 +167,8 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
               currency: tenant.currency,
               autoSend: tenant.autoSend,
               trust: 'supervised' as const,
-              approvers: people.map(({ id, name, role }) => ({ id, name, role })),
+              approvers: tenant.approvers,
+              receivingChannels: tenant.receivingChannels,
             };
           }),
         ),
@@ -120,10 +178,10 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
     async inbox(tenantId: string) {
       if (!allowed.has(tenantId)) return undefined;
       return withTenant(database, tenantId, async (tx) => {
-        const [tenant] = await tx
-          .select({ id: tenants.id })
-          .from(tenants)
-          .where(eq(tenants.id, tenantId));
+        const tenant = await tx.query.tenants.findFirst({
+          columns: { id: true },
+          where: (tenant, { eq }) => eq(tenant.id, tenantId),
+        });
         return tenant ? Inbox.parse({ items: await readItems(tx, tenantId) }) : undefined;
       });
     },
@@ -145,33 +203,20 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
           message: 'Add a reason for rejecting or handing off this draft.',
         };
       return withTenant(database, tenantId, async (tx) => {
-        const [target] = await tx
-          .select({ conversationId: messages.conversationId })
-          .from(drafts)
-          .innerJoin(
-            messages,
-            and(eq(messages.tenantId, drafts.tenantId), eq(messages.id, drafts.messageId)),
-          )
-          .where(and(eq(drafts.tenantId, tenantId), eq(drafts.id, id)));
+        const target = await tx.query.drafts.findFirst({
+          columns: { id: true },
+          where: (draft, { and, eq }) => and(eq(draft.tenantId, tenantId), eq(draft.id, id)),
+          with: { message: { columns: { conversationId: true } } },
+        });
         if (!target)
           return { ok: false, code: 'not_found', message: 'Draft not found in this business.' };
         // All decisions and future message-ingest updates lock the conversation first.
-        const [conversation] = await tx
-          .select()
-          .from(conversations)
-          .where(
-            and(eq(conversations.tenantId, tenantId), eq(conversations.id, target.conversationId)),
-          )
-          .for('update');
-        const [draft] = await tx
-          .select()
-          .from(drafts)
-          .where(and(eq(drafts.tenantId, tenantId), eq(drafts.id, id)))
-          .for('update');
-        const [actor] = await tx
-          .select()
-          .from(approvers)
-          .where(and(eq(approvers.tenantId, tenantId), eq(approvers.id, input.approverId)));
+        const conversation = await lockConversation(tx, tenantId, target.message.conversationId);
+        const draft = await lockDraft(tx, tenantId, id);
+        const actor = await tx.query.approvers.findFirst({
+          where: (actor, { and, eq }) =>
+            and(eq(actor.tenantId, tenantId), eq(actor.id, input.approverId)),
+        });
         if (!actor)
           return {
             ok: false,
@@ -180,16 +225,16 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
           };
         if (!draft || !conversation)
           return { ok: false, code: 'not_found', message: 'Draft not found in this business.' };
-        const [message] = await tx
-          .select()
-          .from(messages)
-          .where(and(eq(messages.tenantId, tenantId), eq(messages.id, draft.messageId)));
-        const [latestDraft] = await tx
-          .select({ version: drafts.version })
-          .from(drafts)
-          .where(and(eq(drafts.tenantId, tenantId), eq(drafts.messageId, draft.messageId)))
-          .orderBy(desc(drafts.version))
-          .limit(1);
+        const message = await tx.query.messages.findFirst({
+          where: (message, { and, eq }) =>
+            and(eq(message.tenantId, tenantId), eq(message.id, draft.messageId)),
+        });
+        const latestDraft = await tx.query.drafts.findFirst({
+          columns: { version: true },
+          where: (candidate, { and, eq }) =>
+            and(eq(candidate.tenantId, tenantId), eq(candidate.messageId, draft.messageId)),
+          orderBy: (candidate, { desc }) => desc(candidate.version),
+        });
         if (
           draft.status !== 'needs_approval' ||
           draft.revision !== input.revision ||
@@ -202,6 +247,40 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
             message:
               'This draft has changed, was superseded or was already reviewed. Refresh the inbox.',
           };
+        if (input.action === 'approve') {
+          const evidence = DraftEvidence.parse(draft.evidence);
+          if (!evidence.assessment)
+            return {
+              ok: false,
+              code: 'policy_blocked',
+              message:
+                'This legacy sample has no pricing/policy assessment. Regenerate it before approval.',
+            };
+          const stored = evidence.assessment;
+          const context = await loadPricingContext(tx, tenantId, stored.catalogueVersion);
+          const current = evaluateRequest(context, stored.request);
+          if (current.fingerprint !== stored.fingerprint)
+            return {
+              ok: false,
+              code: 'conflict',
+              message:
+                'Pricing or policy configuration changed. Regenerate this draft before approval.',
+            };
+          if (current.blockApproval)
+            return {
+              ok: false,
+              code: 'policy_blocked',
+              message:
+                'Policy blocks approval. Correct the structured request, reject it or hand it off.',
+            };
+          if (!sameCommercialFacts(draft.originalReply, input.reply))
+            return {
+              ok: false,
+              code: 'policy_blocked',
+              message:
+                'Commercial numbers or currency cannot be changed in the reply. Correct the structured request and recalculate first.',
+            };
+        }
         const updated = await tx
           .update(drafts)
           .set({

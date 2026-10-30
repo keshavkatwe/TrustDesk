@@ -13,6 +13,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 function tenantPolicy(column: AnyPgColumn) {
@@ -44,6 +45,7 @@ export const tenants = pgTable(
     outsideServiceArea: text('outside_service_area', { enum: ['hand_off'] }).notNull(),
     minimumOrderMinor: bigint('minimum_order_minor', { mode: 'bigint' }).notNull().default(sql`0`),
     faq: text('faq').array().notNull(),
+    commercialRules: jsonb('commercial_rules'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -182,6 +184,11 @@ export const messages = pgTable(
     sourceEvent: text('source_event').notNull(),
     body: text('body').notNull(),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    processingState: text('processing_state', {
+      enum: ['queued', 'processing', 'ready', 'failed', 'superseded'],
+    })
+      .notNull()
+      .default('ready'),
   },
   (t) => [
     primaryKey({ columns: [t.tenantId, t.id] }),
@@ -193,6 +200,10 @@ export const messages = pgTable(
     }),
     check('messages_channel', sql`${t.channel} in ('whatsapp', 'email', 'webform')`),
     check('messages_sequence', sql`${t.sequence} > 0`),
+    check(
+      'messages_processing',
+      sql`${t.processingState} in ('queued','processing','ready','failed','superseded')`,
+    ),
     tenantPolicy(t.tenantId),
   ],
 );
@@ -210,7 +221,7 @@ export const drafts = pgTable(
     }).notNull(),
     originalReply: text('original_reply').notNull(),
     evidence: jsonb('evidence').notNull(),
-    provenance: text('provenance', { enum: ['sample'] })
+    provenance: text('provenance', { enum: ['sample', 'openai', 'received'] })
       .notNull()
       .default('sample'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -227,7 +238,7 @@ export const drafts = pgTable(
       sql`${t.status} in ('needs_approval','approved','rejected','handed_off','superseded')`,
     ),
     check('drafts_revision', sql`${t.version} > 0 and ${t.revision} > 0`),
-    check('drafts_sample', sql`${t.provenance} = 'sample'`),
+    check('drafts_provenance', sql`${t.provenance} in ('sample', 'openai', 'received')`),
     index('drafts_inbox_idx').on(t.tenantId, t.status, t.createdAt),
     tenantPolicy(t.tenantId),
   ],
@@ -291,6 +302,104 @@ export const outbox = pgTable(
       foreignColumns: [reviews.tenantId, reviews.id, reviews.action],
     }),
     check('outbox_approval_only', sql`${t.action} = 'approve' and ${t.status} = 'pending'`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const aiRuns = pgTable(
+  'ai_runs',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    messageId: text('message_id').notNull(),
+    sourceDraftId: text('source_draft_id').notNull(),
+    sourceRevision: integer('source_revision').notNull(),
+    resultDraftId: text('result_draft_id'),
+    model: text('model').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    inputHash: text('input_hash').notNull(),
+    status: text('status', { enum: ['running', 'succeeded', 'failed', 'superseded'] }).notNull(),
+    errorCode: text('error_code'),
+    responseId: text('response_id'),
+    output: jsonb('output'),
+    usage: jsonb('usage'),
+    durationMs: integer('duration_ms'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.messageId],
+      foreignColumns: [messages.tenantId, messages.id],
+    }),
+    foreignKey({
+      columns: [t.tenantId, t.sourceDraftId],
+      foreignColumns: [drafts.tenantId, drafts.id],
+    }),
+    foreignKey({
+      columns: [t.tenantId, t.resultDraftId],
+      foreignColumns: [drafts.tenantId, drafts.id],
+    }),
+    uniqueIndex('ai_runs_active_message_key')
+      .on(t.tenantId, t.messageId)
+      .where(sql`${t.status} = 'running'`),
+    index('ai_runs_message_idx').on(t.tenantId, t.messageId, t.createdAt),
+    check('ai_runs_status', sql`${t.status} in ('running','succeeded','failed','superseded')`),
+    check('ai_runs_revision', sql`${t.sourceRevision} > 0`),
+    check('ai_runs_hash', sql`${t.inputHash} ~ '^[a-f0-9]{64}$'`),
+    check(
+      'ai_runs_completion',
+      sql`(${t.status} = 'running' and ${t.finishedAt} is null) or (${t.status} <> 'running' and ${t.finishedAt} is not null)`,
+    ),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const eventReceipts = pgTable(
+  'event_receipts',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    eventId: text('event_id').notNull(),
+    messageId: text('message_id').notNull(),
+    outcome: text('outcome', { enum: ['accepted', 'duplicate', 'conflict'] }).notNull(),
+    bodyHash: text('body_hash').notNull(),
+    claimedTenant: text('claimed_tenant'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.messageId],
+      foreignColumns: [messages.tenantId, messages.id],
+    }),
+    index('event_receipts_message_idx').on(t.tenantId, t.messageId),
+    check('event_receipts_outcome', sql`${t.outcome} in ('accepted','duplicate','conflict')`),
+    check('event_receipts_hash', sql`${t.bodyHash} ~ '^[a-f0-9]{64}$'`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const deliveries = pgTable(
+  'deliveries',
+  {
+    tenantId: text('tenant_id').notNull(),
+    outboxId: text('outbox_id').notNull(),
+    status: text('status', { enum: ['simulated_sent', 'cancelled'] }).notNull(),
+    reason: text('reason').notNull(),
+    simulatedMessageId: text('simulated_message_id'),
+    reply: text('reply').notNull(),
+    destination: text('destination').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.outboxId] }),
+    foreignKey({ columns: [t.tenantId, t.outboxId], foreignColumns: [outbox.tenantId, outbox.id] }),
+    check(
+      'deliveries_status',
+      sql`(${t.status} = 'simulated_sent' and ${t.simulatedMessageId} is not null) or (${t.status} = 'cancelled' and ${t.simulatedMessageId} is null)`,
+    ),
     tenantPolicy(t.tenantId),
   ],
 );

@@ -86,6 +86,31 @@
                               ],
                               "additionalProperties": false
                             }
+                          },
+                          "receivingChannels": {
+                            "default": [],
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "channel": {
+                                  "type": "string",
+                                  "enum": [
+                                    "whatsapp",
+                                    "email",
+                                    "webform"
+                                  ]
+                                },
+                                "address": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "channel",
+                                "address"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -97,7 +122,8 @@
                           "currency",
                           "trust",
                           "autoSend",
-                          "approvers"
+                          "approvers",
+                          "receivingChannels"
                         ],
                         "additionalProperties": false
                       }
@@ -181,6 +207,563 @@
                           },
                           "sourceEvent": {
                             "type": "string"
+                          },
+                          "provenance": {
+                            "default": "sample",
+                            "type": "string",
+                            "enum": [
+                              "sample",
+                              "openai",
+                              "received"
+                            ]
+                          },
+                          "processingState": {
+                            "default": "ready",
+                            "type": "string",
+                            "enum": [
+                              "queued",
+                              "processing",
+                              "ready",
+                              "failed",
+                              "superseded"
+                            ]
+                          },
+                          "draftVersion": {
+                            "default": 1,
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "generation": {
+                            "default": null,
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "running",
+                                  "succeeded",
+                                  "failed",
+                                  "superseded"
+                                ]
+                              },
+                              "model": {
+                                "type": "string"
+                              },
+                              "promptVersion": {
+                                "type": "string"
+                              },
+                              "errorCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "responseId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "usage": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "inputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "cachedInputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "outputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "estimatedCostUsd": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "inputTokens",
+                                  "cachedInputTokens",
+                                  "outputTokens",
+                                  "estimatedCostUsd"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "durationMs": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "status",
+                              "model",
+                              "promptVersion",
+                              "errorCode",
+                              "responseId",
+                              "usage",
+                              "durationMs",
+                              "createdAt"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "draftGeneration": {
+                            "default": null,
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "running",
+                                  "succeeded",
+                                  "failed",
+                                  "superseded"
+                                ]
+                              },
+                              "model": {
+                                "type": "string"
+                              },
+                              "promptVersion": {
+                                "type": "string"
+                              },
+                              "errorCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "responseId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "usage": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "inputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "cachedInputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "outputTokens": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "estimatedCostUsd": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "inputTokens",
+                                  "cachedInputTokens",
+                                  "outputTokens",
+                                  "estimatedCostUsd"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "durationMs": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "status",
+                              "model",
+                              "promptVersion",
+                              "errorCode",
+                              "responseId",
+                              "usage",
+                              "durationMs",
+                              "createdAt"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "assessment": {
+                            "default": null,
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "engineVersion": {
+                                "type": "string"
+                              },
+                              "catalogueVersion": {
+                                "type": "string"
+                              },
+                              "fingerprint": {
+                                "type": "string"
+                              },
+                              "request": {
+                                "type": "object",
+                                "properties": {
+                                  "intent": {
+                                    "type": "string",
+                                    "enum": [
+                                      "quote",
+                                      "faq",
+                                      "support",
+                                      "spam"
+                                    ]
+                                  },
+                                  "language": {
+                                    "type": "string",
+                                    "enum": [
+                                      "Arabic",
+                                      "English",
+                                      "Mixed"
+                                    ]
+                                  },
+                                  "lines": {
+                                    "maxItems": 30,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "sku": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "minLength": 1
+                                        },
+                                        "description": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "maxLength": 20,
+                                          "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                        },
+                                        "unit": {
+                                          "type": "string",
+                                          "enum": [
+                                            "item",
+                                            "m2"
+                                          ]
+                                        },
+                                        "mode": {
+                                          "type": "string",
+                                          "enum": [
+                                            "buy",
+                                            "month",
+                                            "day"
+                                          ]
+                                        },
+                                        "periods": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "maxLength": 20,
+                                          "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                        }
+                                      },
+                                      "required": [
+                                        "sku",
+                                        "description",
+                                        "quantity",
+                                        "unit",
+                                        "mode",
+                                        "periods"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "location": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 100
+                                  },
+                                  "delivery": {
+                                    "type": "string",
+                                    "enum": [
+                                      "requested",
+                                      "collection",
+                                      "unknown"
+                                    ]
+                                  },
+                                  "deliveryTrips": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 100
+                                  },
+                                  "discountRequested": {
+                                    "type": "boolean"
+                                  },
+                                  "discountPercent": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 20,
+                                    "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                  },
+                                  "budgetMinor": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "availabilityRequested": {
+                                    "type": "boolean"
+                                  },
+                                  "faqIndex": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "missing": {
+                                    "maxItems": 30,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "maxLength": 200
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "intent",
+                                  "language",
+                                  "lines",
+                                  "location",
+                                  "delivery",
+                                  "deliveryTrips",
+                                  "discountRequested",
+                                  "discountPercent",
+                                  "budgetMinor",
+                                  "availabilityRequested",
+                                  "faqIndex",
+                                  "missing"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "disposition": {
+                                "type": "string",
+                                "enum": [
+                                  "auto_send",
+                                  "needs_approval",
+                                  "hand_off",
+                                  "drop"
+                                ]
+                              },
+                              "blockApproval": {
+                                "type": "boolean"
+                              },
+                              "quote": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "currency": {
+                                    "type": "string",
+                                    "enum": [
+                                      "AED",
+                                      "SAR"
+                                    ]
+                                  },
+                                  "vatPercent": {
+                                    "type": "number"
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "sku": {
+                                          "type": "string"
+                                        },
+                                        "label": {
+                                          "type": "string"
+                                        },
+                                        "unitPriceMinor": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "quantity": {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0
+                                        },
+                                        "periods": {
+                                          "type": "number",
+                                          "exclusiveMinimum": 0
+                                        },
+                                        "unit": {
+                                          "type": "string"
+                                        },
+                                        "lineTotalMinor": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 9007199254740991
+                                        }
+                                      },
+                                      "required": [
+                                        "sku",
+                                        "label",
+                                        "unitPriceMinor",
+                                        "quantity",
+                                        "periods",
+                                        "unit",
+                                        "lineTotalMinor"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "subtotalMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "discountMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "vatMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "totalMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "complete": {
+                                    "type": "boolean"
+                                  },
+                                  "note": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "currency",
+                                  "vatPercent",
+                                  "lines",
+                                  "subtotalMinor",
+                                  "discountMinor",
+                                  "vatMinor",
+                                  "totalMinor",
+                                  "complete",
+                                  "note"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "reasons": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "code": {
+                                      "type": "string"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    },
+                                    "detail": {
+                                      "type": "string"
+                                    },
+                                    "source": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "code",
+                                    "title",
+                                    "detail",
+                                    "source"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "missing": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "engineVersion",
+                              "catalogueVersion",
+                              "fingerprint",
+                              "request",
+                              "disposition",
+                              "blockApproval",
+                              "quote",
+                              "reasons",
+                              "missing"
+                            ],
+                            "additionalProperties": false
                           },
                           "title": {
                             "type": "string"
@@ -421,16 +1004,44 @@
                               },
                               "status": {
                                 "type": "string",
-                                "const": "pending"
+                                "enum": [
+                                  "pending",
+                                  "simulated_sent",
+                                  "cancelled"
+                                ]
                               },
                               "createdAt": {
                                 "type": "string"
+                              },
+                              "completedAt": {
+                                "default": null,
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "reason": {
+                                "default": null,
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "simulatedMessageId": {
+                                "default": null,
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               }
                             },
                             "required": [
                               "id",
                               "status",
-                              "createdAt"
+                              "createdAt",
+                              "completedAt",
+                              "reason",
+                              "simulatedMessageId"
                             ],
                             "additionalProperties": false
                           },
@@ -502,6 +1113,12 @@
                           "id",
                           "tenantId",
                           "sourceEvent",
+                          "provenance",
+                          "processingState",
+                          "draftVersion",
+                          "generation",
+                          "draftGeneration",
+                          "assessment",
                           "title",
                           "customer",
                           "channel",
@@ -779,6 +1396,563 @@
                     "sourceEvent": {
                       "type": "string"
                     },
+                    "provenance": {
+                      "default": "sample",
+                      "type": "string",
+                      "enum": [
+                        "sample",
+                        "openai",
+                        "received"
+                      ]
+                    },
+                    "processingState": {
+                      "default": "ready",
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "processing",
+                        "ready",
+                        "failed",
+                        "superseded"
+                      ]
+                    },
+                    "draftVersion": {
+                      "default": 1,
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "generation": {
+                      "default": null,
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "running",
+                            "succeeded",
+                            "failed",
+                            "superseded"
+                          ]
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "promptVersion": {
+                          "type": "string"
+                        },
+                        "errorCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "responseId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "usage": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "inputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "cachedInputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "outputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "estimatedCostUsd": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inputTokens",
+                            "cachedInputTokens",
+                            "outputTokens",
+                            "estimatedCostUsd"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "durationMs": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "model",
+                        "promptVersion",
+                        "errorCode",
+                        "responseId",
+                        "usage",
+                        "durationMs",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "draftGeneration": {
+                      "default": null,
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "running",
+                            "succeeded",
+                            "failed",
+                            "superseded"
+                          ]
+                        },
+                        "model": {
+                          "type": "string"
+                        },
+                        "promptVersion": {
+                          "type": "string"
+                        },
+                        "errorCode": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "responseId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "usage": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "inputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "cachedInputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "outputTokens": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "estimatedCostUsd": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "inputTokens",
+                            "cachedInputTokens",
+                            "outputTokens",
+                            "estimatedCostUsd"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "durationMs": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "status",
+                        "model",
+                        "promptVersion",
+                        "errorCode",
+                        "responseId",
+                        "usage",
+                        "durationMs",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "assessment": {
+                      "default": null,
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "engineVersion": {
+                          "type": "string"
+                        },
+                        "catalogueVersion": {
+                          "type": "string"
+                        },
+                        "fingerprint": {
+                          "type": "string"
+                        },
+                        "request": {
+                          "type": "object",
+                          "properties": {
+                            "intent": {
+                              "type": "string",
+                              "enum": [
+                                "quote",
+                                "faq",
+                                "support",
+                                "spam"
+                              ]
+                            },
+                            "language": {
+                              "type": "string",
+                              "enum": [
+                                "Arabic",
+                                "English",
+                                "Mixed"
+                              ]
+                            },
+                            "lines": {
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "sku": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "minLength": 1
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 200
+                                  },
+                                  "quantity": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 20,
+                                    "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                  },
+                                  "unit": {
+                                    "type": "string",
+                                    "enum": [
+                                      "item",
+                                      "m2"
+                                    ]
+                                  },
+                                  "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "buy",
+                                      "month",
+                                      "day"
+                                    ]
+                                  },
+                                  "periods": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 20,
+                                    "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                  }
+                                },
+                                "required": [
+                                  "sku",
+                                  "description",
+                                  "quantity",
+                                  "unit",
+                                  "mode",
+                                  "periods"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "location": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 100
+                            },
+                            "delivery": {
+                              "type": "string",
+                              "enum": [
+                                "requested",
+                                "collection",
+                                "unknown"
+                              ]
+                            },
+                            "deliveryTrips": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 1,
+                              "maximum": 100
+                            },
+                            "discountRequested": {
+                              "type": "boolean"
+                            },
+                            "discountPercent": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 20,
+                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                            },
+                            "budgetMinor": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "availabilityRequested": {
+                              "type": "boolean"
+                            },
+                            "faqIndex": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "missing": {
+                              "maxItems": 30,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "intent",
+                            "language",
+                            "lines",
+                            "location",
+                            "delivery",
+                            "deliveryTrips",
+                            "discountRequested",
+                            "discountPercent",
+                            "budgetMinor",
+                            "availabilityRequested",
+                            "faqIndex",
+                            "missing"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": [
+                            "auto_send",
+                            "needs_approval",
+                            "hand_off",
+                            "drop"
+                          ]
+                        },
+                        "blockApproval": {
+                          "type": "boolean"
+                        },
+                        "quote": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "currency": {
+                              "type": "string",
+                              "enum": [
+                                "AED",
+                                "SAR"
+                              ]
+                            },
+                            "vatPercent": {
+                              "type": "number"
+                            },
+                            "lines": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "sku": {
+                                    "type": "string"
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "unitPriceMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  },
+                                  "quantity": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "periods": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                  },
+                                  "unit": {
+                                    "type": "string"
+                                  },
+                                  "lineTotalMinor": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 9007199254740991
+                                  }
+                                },
+                                "required": [
+                                  "sku",
+                                  "label",
+                                  "unitPriceMinor",
+                                  "quantity",
+                                  "periods",
+                                  "unit",
+                                  "lineTotalMinor"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "subtotalMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "discountMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "vatMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "totalMinor": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "complete": {
+                              "type": "boolean"
+                            },
+                            "note": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "currency",
+                            "vatPercent",
+                            "lines",
+                            "subtotalMinor",
+                            "discountMinor",
+                            "vatMinor",
+                            "totalMinor",
+                            "complete",
+                            "note"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "reasons": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "detail": {
+                                "type": "string"
+                              },
+                              "source": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "title",
+                              "detail",
+                              "source"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "missing": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "engineVersion",
+                        "catalogueVersion",
+                        "fingerprint",
+                        "request",
+                        "disposition",
+                        "blockApproval",
+                        "quote",
+                        "reasons",
+                        "missing"
+                      ],
+                      "additionalProperties": false
+                    },
                     "title": {
                       "type": "string"
                     },
@@ -1018,16 +2192,44 @@
                         },
                         "status": {
                           "type": "string",
-                          "const": "pending"
+                          "enum": [
+                            "pending",
+                            "simulated_sent",
+                            "cancelled"
+                          ]
                         },
                         "createdAt": {
                           "type": "string"
+                        },
+                        "completedAt": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "reason": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "simulatedMessageId": {
+                          "default": null,
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
                         "id",
                         "status",
-                        "createdAt"
+                        "createdAt",
+                        "completedAt",
+                        "reason",
+                        "simulatedMessageId"
                       ],
                       "additionalProperties": false
                     },
@@ -1099,6 +2301,12 @@
                     "id",
                     "tenantId",
                     "sourceEvent",
+                    "provenance",
+                    "processingState",
+                    "draftVersion",
+                    "generation",
+                    "draftGeneration",
+                    "assessment",
                     "title",
                     "customer",
                     "channel",
@@ -1157,6 +2365,565 @@
                   },
                   "required": [
                     "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/inbox/{id}/generate": {
+      "post": {
+        "operationId": "generateDraft",
+        "tags": [
+          "drafting"
+        ],
+        "summary": "Prepare a new AI-assisted draft, price in code and hold for named review",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "revision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "runId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "runId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Response for status 502",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/events": {
+      "post": {
+        "operationId": "receiveEvent",
+        "tags": [
+          "receive"
+        ],
+        "summary": "Local synthetic adapter: resolve receiving business, save receipt/message and atomically queue drafting",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "event_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "whatsapp",
+                      "email",
+                      "webform"
+                    ]
+                  },
+                  "to": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "message_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "sent_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "received_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12000
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "tenant_id": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "channel",
+                  "to",
+                  "from",
+                  "message_id",
+                  "received_at",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "event_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "whatsapp",
+                      "email",
+                      "webform"
+                    ]
+                  },
+                  "to": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "message_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "sent_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "received_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12000
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "tenant_id": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "channel",
+                  "to",
+                  "from",
+                  "message_id",
+                  "received_at",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "event_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "channel": {
+                    "type": "string",
+                    "enum": [
+                      "whatsapp",
+                      "email",
+                      "webform"
+                    ]
+                  },
+                  "to": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "from": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "message_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "sent_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "received_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 12000
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "tenant_id": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "channel",
+                  "to",
+                  "from",
+                  "message_id",
+                  "received_at",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Response for status 202",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "tenantId": {
+                      "type": "string",
+                      "enum": [
+                        "qamar",
+                        "rimal"
+                      ]
+                    },
+                    "receiptId": {
+                      "type": "string"
+                    },
+                    "messageId": {
+                      "type": "string"
+                    },
+                    "draftId": {
+                      "type": "string"
+                    },
+                    "outcome": {
+                      "type": "string",
+                      "enum": [
+                        "accepted",
+                        "duplicate"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "tenantId",
+                    "receiptId",
+                    "messageId",
+                    "draftId",
+                    "outcome"
                   ],
                   "additionalProperties": false
                 }

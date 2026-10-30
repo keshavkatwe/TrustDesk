@@ -1,0 +1,18 @@
+{
+  "qamar": {
+    "version": "rules-1",
+    "minimumRentalMonths": 1,
+    "maximumRentalMonths": 12,
+    "locationAliases": { "دبي": "Dubai", "jlt": "Dubai", "الشارقة": "Sharjah", "أبو ظبي": "Abu Dhabi", "ابوظبي": "Abu Dhabi" },
+    "delivery": { "sku": "Q-SVC-001", "basis": "order" },
+    "crew": null
+  },
+  "rimal": {
+    "version": "rules-1",
+    "minimumRentalMonths": null,
+    "maximumRentalMonths": null,
+    "locationAliases": { "الرياض": "Riyadh", "حي الملقا": "Riyadh", "al malqa": "Riyadh" },
+    "delivery": { "sku": "R-DLV-001", "basis": "trip" },
+    "crew": { "sku": "R-CRW-001", "stageSku": "R-STG-001", "stageDeckAreaM2": 2, "stageThresholdM2": 12, "screenSku": "R-LED-001", "screenThresholdM2": 6, "tentSku": "R-TNT-001", "shiftsPerOrder": 1 }
+  }
+}

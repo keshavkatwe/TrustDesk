@@ -16,6 +16,7 @@ const reviewErrorStatus = {
   invalid_approver: 400,
   conflict: 409,
   reason_required: 400,
+  policy_blocked: 400,
 } as const;
 const unavailable = {
   message: 'The inbox is unavailable. Check the API and database, then try again.',

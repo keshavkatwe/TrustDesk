@@ -38,7 +38,11 @@ export function MessageRow({
         {item.body}
       </span>
       <span className="flex flex-wrap gap-1">
-        <StatusBadge status={item.status} />
+        <StatusBadge
+          status={item.status}
+          processingState={item.processingState}
+          outboxStatus={item.outbox?.status}
+        />
       </span>
     </Button>
   );

@@ -28,7 +28,17 @@
       "outputs": ["src/api/**"]
     },
     "db:generate": { "cache": false },
+    "db:studio": {
+      "cache": false,
+      "persistent": true,
+      "env": ["DATABASE_URL", "STUDIO_TENANT_ID"]
+    },
     "db:migrate": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
+    "queue:setup": {
+      "dependsOn": ["@trustdesk/db#db:migrate"],
+      "cache": false,
+      "env": ["DATABASE_ADMIN_URL"]
+    },
     "db:seed": { "cache": false, "env": ["DATABASE_ADMIN_URL"] },
     "db:test": { "cache": false, "env": ["DATABASE_TEST_URL", "DATABASE_TEST_ADMIN_URL"] },
     "inbox:seed": {
@@ -44,7 +54,12 @@
     "@trustdesk/api#dev": {
       "cache": false,
       "persistent": true,
-      "env": ["API_PORT", "WEB_ORIGIN", "DATABASE_URL"]
+      "env": ["API_PORT", "WEB_ORIGIN", "DATABASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"]
+    },
+    "@trustdesk/worker#dev": {
+      "cache": false,
+      "persistent": true,
+      "env": ["DATABASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"]
     },
     "@trustdesk/web#dev": {
       "dependsOn": ["api:generate"],

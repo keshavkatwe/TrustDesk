@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { z } from 'zod';
 import { ConnectionUrl } from './config.ts';
+import * as relations from './relations.ts';
 import * as schema from './schema.ts';
 
 const Options = z.object({
@@ -16,7 +17,11 @@ export function createDatabase(connectionString: string, options: { max?: number
   const config = Options.parse({ connectionString, max: options.max ?? 10 });
   const pool = new Pool({ ...config, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10000 });
   pool.on('error', () => console.error('An idle PostgreSQL connection failed.'));
-  return { db: drizzle(pool, { schema }), pool, close: () => pool.end() };
+  return {
+    db: drizzle(pool, { schema: { ...schema, ...relations } }),
+    pool,
+    close: () => pool.end(),
+  };
 }
 
 export type Database = ReturnType<typeof createDatabase>;

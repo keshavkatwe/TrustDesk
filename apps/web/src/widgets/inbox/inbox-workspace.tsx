@@ -20,6 +20,7 @@ import { statuses } from '@/libs/inbox';
 import { cn } from '@/libs/utils';
 import type { Tenant } from '@/types/api';
 import { ReviewPanel } from './review-panel';
+import { TestEnquiry } from './test-enquiry';
 
 export function InboxWorkspace({ tenant }: { tenant: Tenant }) {
   const {
@@ -49,25 +50,35 @@ export function InboxWorkspace({ tenant }: { tenant: Tenant }) {
             </p>
           </div>
         </div>
-        <FieldGroup className="w-full sm:w-72">
-          <Field orientation="horizontal">
-            <FieldLabel htmlFor="approver">Review as</FieldLabel>
-            <Select value={approverId} onValueChange={setApproverId}>
-              <SelectTrigger id="approver" className="w-44">
-                <SelectValue placeholder="Choose approver" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {tenant.approvers.map((person) => (
-                    <SelectItem key={person.id} value={person.id}>
-                      {person.name} · {person.role}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
-        </FieldGroup>
+        <div className="flex flex-wrap items-center gap-3">
+          <TestEnquiry
+            tenant={tenant}
+            onSelect={(id) => {
+              setSearch('');
+              setFilter('needs_approval');
+              setSelectedId(id);
+            }}
+          />
+          <FieldGroup className="w-full sm:w-72">
+            <Field orientation="horizontal">
+              <FieldLabel htmlFor="approver">Review as</FieldLabel>
+              <Select value={approverId} onValueChange={setApproverId}>
+                <SelectTrigger id="approver" className="w-44">
+                  <SelectValue placeholder="Choose approver" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {tenant.approvers.map((person) => (
+                      <SelectItem key={person.id} value={person.id}>
+                        {person.name} · {person.role}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          </FieldGroup>
+        </div>
       </header>
       {inbox.isError ? (
         <div className="p-6">

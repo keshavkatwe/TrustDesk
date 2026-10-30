@@ -1,0 +1,184 @@
+{
+  "q-training": {
+    "intent": "quote",
+    "language": "English",
+    "lines": [
+      {
+        "sku": "Q-LAP-001",
+        "description": "MacBook Air 13 M4",
+        "quantity": "30",
+        "unit": "item",
+        "mode": "month",
+        "periods": "3"
+      }
+    ],
+    "location": "JLT",
+    "delivery": "unknown",
+    "deliveryTrips": null,
+    "discountRequested": true,
+    "discountPercent": null,
+    "budgetMinor": null,
+    "availabilityRequested": false,
+    "faqIndex": null,
+    "missing": []
+  },
+  "q-iphones": {
+    "intent": "quote",
+    "language": "Arabic",
+    "lines": [
+      {
+        "sku": "Q-PHN-001",
+        "description": "iPhone 16 128 GB",
+        "quantity": "٥",
+        "unit": "item",
+        "mode": "buy",
+        "periods": "1"
+      }
+    ],
+    "location": null,
+    "delivery": "unknown",
+    "deliveryTrips": null,
+    "discountRequested": false,
+    "discountPercent": null,
+    "budgetMinor": null,
+    "availabilityRequested": false,
+    "faqIndex": null,
+    "missing": []
+  },
+  "q-abudhabi": {
+    "intent": "quote",
+    "language": "English",
+    "lines": [
+      {
+        "sku": null,
+        "description": "Laptop model unspecified",
+        "quantity": "12",
+        "unit": "item",
+        "mode": "month",
+        "periods": "6"
+      },
+      {
+        "sku": "Q-MON-001",
+        "description": "27 inch monitor",
+        "quantity": "12",
+        "unit": "item",
+        "mode": "month",
+        "periods": "6"
+      }
+    ],
+    "location": "Abu Dhabi",
+    "delivery": "requested",
+    "deliveryTrips": null,
+    "discountRequested": false,
+    "discountPercent": null,
+    "budgetMinor": null,
+    "availabilityRequested": true,
+    "faqIndex": null,
+    "missing": []
+  },
+  "q-training-old": {
+    "intent": "quote",
+    "language": "English",
+    "lines": [
+      {
+        "sku": "Q-LAP-001",
+        "description": "MacBook Air 13 M4",
+        "quantity": "25",
+        "unit": "item",
+        "mode": "month",
+        "periods": "3"
+      }
+    ],
+    "location": null,
+    "delivery": "unknown",
+    "deliveryTrips": null,
+    "discountRequested": true,
+    "discountPercent": null,
+    "budgetMinor": null,
+    "availabilityRequested": false,
+    "faqIndex": null,
+    "missing": []
+  },
+  "r-graduation": {
+    "intent": "quote",
+    "language": "Arabic",
+    "lines": [
+      {
+        "sku": "R-CHR-001",
+        "description": "White chairs",
+        "quantity": "٣٠٠",
+        "unit": "item",
+        "mode": "day",
+        "periods": "1"
+      },
+      {
+        "sku": "R-TBL-001",
+        "description": "Round tables",
+        "quantity": "٣٠",
+        "unit": "item",
+        "mode": "day",
+        "periods": "1"
+      },
+      {
+        "sku": "R-STG-001",
+        "description": "Stage 6 by 4 metres",
+        "quantity": "24",
+        "unit": "m2",
+        "mode": "day",
+        "periods": "1"
+      },
+      {
+        "sku": null,
+        "description": "Screen size unspecified",
+        "quantity": null,
+        "unit": "m2",
+        "mode": "day",
+        "periods": "1"
+      }
+    ],
+    "location": "الرياض",
+    "delivery": "unknown",
+    "deliveryTrips": null,
+    "discountRequested": false,
+    "discountPercent": null,
+    "budgetMinor": null,
+    "availabilityRequested": true,
+    "faqIndex": null,
+    "missing": [
+      "Screen size and specification"
+    ]
+  },
+  "r-budget": {
+    "intent": "quote",
+    "language": "Mixed",
+    "lines": [
+      {
+        "sku": "R-LED-001",
+        "description": "LED screen 4 by 3 metres",
+        "quantity": "12",
+        "unit": "m2",
+        "mode": "day",
+        "periods": "2"
+      },
+      {
+        "sku": "R-MIC-001",
+        "description": "Wireless microphone",
+        "quantity": "2",
+        "unit": "item",
+        "mode": "day",
+        "periods": "2"
+      }
+    ],
+    "location": null,
+    "delivery": "unknown",
+    "deliveryTrips": null,
+    "discountRequested": false,
+    "discountPercent": null,
+    "budgetMinor": 900000,
+    "availabilityRequested": false,
+    "faqIndex": null,
+    "missing": [
+      "Event dates"
+    ]
+  }
+}

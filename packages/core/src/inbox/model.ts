@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { Generation } from '../ai/model.ts';
+import { Assessment, Quote } from '../pricing/model.ts';
 
 export const TenantId = z.enum(['qamar', 'rimal']);
 export const InboxParams = z.object({ tenantId: TenantId });
@@ -13,6 +15,9 @@ export const Tenant = z.object({
   trust: z.literal('supervised'),
   autoSend: z.enum(['low_risk_only', 'off']),
   approvers: z.array(z.object({ id: z.string(), name: z.string(), role: z.string() })),
+  receivingChannels: z
+    .array(z.object({ channel: z.enum(['whatsapp', 'email', 'webform']), address: z.string() }))
+    .default([]),
 });
 export const ReviewAction = z.enum(['approve', 'reject', 'hand_off']);
 export const ReviewInput = z.object({
@@ -22,32 +27,18 @@ export const ReviewInput = z.object({
   reply: z.string().trim().min(1).max(4000),
   reason: z.string().trim().max(1000),
 });
-const Money = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
-export const Quote = z.object({
-  currency: z.enum(['AED', 'SAR']),
-  vatPercent: z.number(),
-  lines: z.array(
-    z.object({
-      sku: z.string(),
-      label: z.string(),
-      unitPriceMinor: Money,
-      quantity: z.number().positive(),
-      periods: z.number().positive(),
-      unit: z.string(),
-      lineTotalMinor: Money,
-    }),
-  ),
-  subtotalMinor: Money,
-  discountMinor: Money,
-  vatMinor: Money,
-  totalMinor: Money,
-  complete: z.boolean(),
-  note: z.string(),
-});
 export const InboxItem = z.object({
   id: z.string(),
   tenantId: TenantId,
   sourceEvent: z.string(),
+  provenance: z.enum(['sample', 'openai', 'received']).default('sample'),
+  processingState: z
+    .enum(['queued', 'processing', 'ready', 'failed', 'superseded'])
+    .default('ready'),
+  draftVersion: z.number().int().positive().default(1),
+  generation: Generation.nullable().default(null),
+  draftGeneration: Generation.nullable().default(null),
+  assessment: Assessment.nullable().default(null),
   title: z.string(),
   customer: z.string(),
   channel: z.enum(['WhatsApp', 'Email', 'Web form']),
@@ -65,7 +56,14 @@ export const InboxItem = z.object({
   recommendedAction: ReviewAction,
   supersededBy: z.string().nullable(),
   outbox: z
-    .object({ id: z.string(), status: z.literal('pending'), createdAt: z.string() })
+    .object({
+      id: z.string(),
+      status: z.enum(['pending', 'simulated_sent', 'cancelled']),
+      createdAt: z.string(),
+      completedAt: z.string().nullable().default(null),
+      reason: z.string().nullable().default(null),
+      simulatedMessageId: z.string().nullable().default(null),
+    })
     .nullable(),
   decision: z
     .object({
@@ -90,6 +88,7 @@ export type Tenant = z.infer<typeof Tenant>;
 export type InboxItem = z.infer<typeof InboxItem>;
 export type ReviewInput = z.infer<typeof ReviewInput>;
 export const DraftEvidence = InboxItem.pick({
+  assessment: true,
   title: true,
   language: true,
   context: true,

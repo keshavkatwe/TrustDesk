@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 import { createDatabase, type Database, withTenant } from './client.ts';
+import { CommercialRules } from './commercial-rules.ts';
 import { databaseUrl } from './config.ts';
 import {
   approvers,
@@ -30,6 +32,9 @@ export async function loadSeed() {
 
 export async function seedDatabase(database: Database) {
   const { businesses, catalogues } = await loadSeed();
+  const rules = z
+    .record(z.string(), CommercialRules)
+    .parse(await Bun.file(new URL('../../../seed/commercial-rules.json', import.meta.url)).json());
   for (const business of businesses) {
     const catalogue = catalogues.find((entry) => entry.tenant === business.id);
     if (!catalogue) throw new Error(`Missing catalogue for ${business.id}.`);
@@ -56,8 +61,14 @@ export async function seedDatabase(database: Database) {
           outsideServiceArea: business.policy.outside_service_area,
           minimumOrderMinor: scaledInteger(business.policy.minimum_order_before_vat ?? 0, 2),
           faq: business.faq,
+          commercialRules: rules[business.id],
         })
         .onConflictDoNothing();
+      if (!rules[business.id]) throw new Error('Missing commercial rules.');
+      await tx
+        .update(tenants)
+        .set({ commercialRules: rules[business.id] })
+        .where(and(eq(tenants.id, business.id), isNull(tenants.commercialRules)));
       await tx
         .insert(approvers)
         .values(business.approvers.map((person) => ({ ...person, tenantId: business.id })))
@@ -75,15 +86,11 @@ export async function seedDatabase(database: Database) {
           sourceHash,
         })
         .onConflictDoNothing();
-      const [existing] = await tx
-        .select()
-        .from(catalogueVersions)
-        .where(
-          and(
-            eq(catalogueVersions.tenantId, business.id),
-            eq(catalogueVersions.version, catalogue.version),
-          ),
-        );
+      const existing = await tx.query.catalogueVersions.findFirst({
+        columns: { sourceHash: true },
+        where: (stored, { and, eq }) =>
+          and(eq(stored.tenantId, business.id), eq(stored.version, catalogue.version)),
+      });
       if (existing?.sourceHash !== sourceHash)
         throw new Error(
           `Catalogue ${business.id}/${catalogue.version} changed; publish a new version instead.`,

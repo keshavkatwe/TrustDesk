@@ -20,7 +20,13 @@ import {
 import { money } from '@/libs/money';
 import type { InboxItem } from '@/types/api';
 
-export function QuoteBreakdown({ quote }: { quote: NonNullable<InboxItem['quote']> }) {
+export function QuoteBreakdown({
+  quote,
+  assessment,
+}: {
+  quote: NonNullable<InboxItem['quote']>;
+  assessment: InboxItem['assessment'];
+}) {
   return (
     <Card>
       <CardHeader>
@@ -28,7 +34,8 @@ export function QuoteBreakdown({ quote }: { quote: NonNullable<InboxItem['quote'
           <h3>Quote breakdown</h3>
         </CardTitle>
         <CardDescription>
-          Sample catalogue amounts · {quote.currency} · {quote.vatPercent}% VAT
+          {assessment ? 'Computed from catalogue' : 'Legacy sample amounts'} · {quote.currency} ·{' '}
+          {quote.vatPercent}% VAT
         </CardDescription>
         <CardAction>
           <Badge variant={quote.complete ? 'success' : 'warning'}>
@@ -39,7 +46,9 @@ export function QuoteBreakdown({ quote }: { quote: NonNullable<InboxItem['quote'
       <CardContent className="flex flex-col gap-4">
         <Table>
           <TableCaption>
-            Seed catalogue 2026-11-01. Amounts below are hand-authored fixtures.
+            {assessment
+              ? `Catalogue ${assessment.catalogueVersion} · ${assessment.engineVersion}. Line amounts, invoice discount and VAT round half-up to minor units.`
+              : 'Legacy sample catalogue 2026-11-01. Amounts below were hand-authored.'}
           </TableCaption>
           <TableHeader>
             <TableRow>

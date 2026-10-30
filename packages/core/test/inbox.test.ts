@@ -8,6 +8,7 @@ import {
   messages,
   outbox,
   reviews,
+  tenants,
   withTenant,
 } from '@trustdesk/db';
 import { migrateDatabase } from '@trustdesk/db/migrate';
@@ -16,6 +17,9 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { DraftEvidence } from '../src/inbox/model.ts';
 import { seedInbox } from '../src/inbox/seed.ts';
 import { createInboxService } from '../src/inbox/service.ts';
+import { loadPricingContext } from '../src/pricing/context.ts';
+import { evaluateRequest } from '../src/pricing/evaluate.ts';
+import { renderReply } from '../src/pricing/render.ts';
 
 const appUrl = databaseUrl('DATABASE_TEST_URL');
 const adminUrl = databaseUrl('DATABASE_TEST_ADMIN_URL');
@@ -79,7 +83,23 @@ async function fixture(tenantId: 'qamar' | 'rimal' = 'qamar') {
       messageId: id,
       status: 'needs_approval',
       originalReply: 'مرحباً 👋',
-      evidence,
+      evidence: {
+        ...evidence,
+        assessment: evaluateRequest(await loadPricingContext(tx, tenantId, '2026-11-01'), {
+          intent: 'faq',
+          language: 'English',
+          lines: [],
+          location: null,
+          delivery: 'collection',
+          deliveryTrips: null,
+          discountRequested: false,
+          discountPercent: null,
+          budgetMinor: null,
+          availabilityRequested: false,
+          faqIndex: 0,
+          missing: [],
+        }),
+      },
     });
   });
   return id;
@@ -143,6 +163,19 @@ describe('durable inbox with the restricted application role', () => {
     const rimal = await service.inbox('rimal');
     expect(qamar?.items).toHaveLength(4);
     expect(rimal?.items).toHaveLength(2);
+    expect(qamar?.items.find((item) => item.id === 'q-training')?.assessment?.quote).toMatchObject({
+      subtotalMinor: 1620000,
+      discountMinor: 0,
+      totalMinor: 1701000,
+    });
+    expect(rimal?.items.find((item) => item.id === 'r-budget')?.assessment?.quote?.totalMinor).toBe(
+      1260400,
+    );
+    expect(
+      rimal?.items
+        .find((item) => item.id === 'r-graduation')
+        ?.assessment?.quote?.lines.find((line) => line.sku === 'R-STG-001')?.quantity,
+    ).toBe(12);
     expect(qamar?.items.every((i) => i.tenantId === 'qamar')).toBe(true);
     expect(qamar?.items.find((i) => i.sourceEvent === 'evt_0002')?.body).toContain('آيفون');
     const limited = createInboxService(app, ['qamar']);
@@ -324,6 +357,136 @@ describe('durable inbox with the restricted application role', () => {
       await admin.db.execute(sql`DROP FUNCTION test_fail_outbox()`);
     }
     expect(await service.review('qamar', id, input)).toMatchObject({ ok: true });
+  });
+
+  test('approval rechecks current configuration and blocks stale pricing without writing an intent', async () => {
+    const id = await fixture();
+    const previous = await withTenant(
+      admin,
+      'qamar',
+      async (tx) => (await tx.select().from(tenants).where(eq(tenants.id, 'qamar')))[0],
+    );
+    if (!previous) throw new Error('Missing tenant');
+    await withTenant(admin, 'qamar', (tx) =>
+      tx.update(tenants).set({ vatBasisPoints: 501 }).where(eq(tenants.id, 'qamar')),
+    );
+    try {
+      expect(await service.review('qamar', id, input)).toMatchObject({
+        ok: false,
+        code: 'conflict',
+      });
+      expect((await state(id)).reviews).toHaveLength(0);
+      expect((await state(id)).outbox).toHaveLength(0);
+    } finally {
+      await withTenant(admin, 'qamar', (tx) =>
+        tx
+          .update(tenants)
+          .set({ vatBasisPoints: previous.vatBasisPoints })
+          .where(eq(tenants.id, 'qamar')),
+      );
+    }
+    expect(await service.review('qamar', id, input)).toMatchObject({ ok: true });
+  });
+
+  test('blocked policy and unassessed legacy samples cannot be approved', async () => {
+    const id = await fixture();
+    await withTenant(admin, 'qamar', (tx) =>
+      tx.update(drafts).set({ evidence }).where(eq(drafts.id, id)),
+    );
+    expect(await service.review('qamar', id, input)).toMatchObject({
+      ok: false,
+      code: 'policy_blocked',
+    });
+    await withTenant(admin, 'qamar', async (tx) => {
+      const assessment = evaluateRequest(await loadPricingContext(tx, 'qamar', '2026-11-01'), {
+        intent: 'quote',
+        language: 'English',
+        lines: [],
+        location: 'Abu Dhabi',
+        delivery: 'requested',
+        deliveryTrips: null,
+        discountRequested: false,
+        discountPercent: null,
+        budgetMinor: null,
+        availabilityRequested: false,
+        faqIndex: null,
+        missing: [],
+      });
+      await tx
+        .update(drafts)
+        .set({ evidence: { ...evidence, assessment } })
+        .where(eq(drafts.id, id));
+    });
+    expect(await service.review('qamar', id, input)).toMatchObject({
+      ok: false,
+      code: 'policy_blocked',
+    });
+    expect((await state(id)).outbox).toHaveLength(0);
+    expect(
+      await service.review('qamar', id, {
+        ...input,
+        action: 'hand_off',
+        reason: 'Outside service area',
+      }),
+    ).toMatchObject({ ok: true, item: { status: 'handed_off', outbox: null } });
+  });
+
+  test('approval blocks changed totals/currency but permits wording edits with the same computed figures', async () => {
+    const id = await fixture();
+    const reply = await withTenant(admin, 'qamar', async (tx) => {
+      const context = await loadPricingContext(tx, 'qamar', '2026-11-01');
+      const assessment = evaluateRequest(context, {
+        intent: 'quote',
+        language: 'English',
+        lines: [
+          {
+            sku: 'Q-PHN-001',
+            description: 'iPhone',
+            quantity: '5',
+            unit: 'item',
+            mode: 'buy',
+            periods: '1',
+          },
+        ],
+        location: 'Dubai',
+        delivery: 'collection',
+        deliveryTrips: null,
+        discountRequested: false,
+        discountPercent: null,
+        budgetMinor: null,
+        availabilityRequested: false,
+        faqIndex: null,
+        missing: [],
+      });
+      const reply = renderReply(assessment, context.tenant.faq);
+      await tx
+        .update(drafts)
+        .set({
+          originalReply: reply,
+          evidence: {
+            ...evidence,
+            assessment,
+            quote: assessment.quote,
+            reasons: assessment.reasons,
+          },
+        })
+        .where(eq(drafts.id, id));
+      return reply;
+    });
+    for (const changed of [reply.replace('17844.75', '1.00'), reply.replace('AED', 'SAR')])
+      expect(await service.review('qamar', id, { ...input, reply: changed })).toMatchObject({
+        ok: false,
+        code: 'policy_blocked',
+      });
+    expect((await state(id)).reviews).toHaveLength(0);
+    expect(
+      await service.review('qamar', id, {
+        ...input,
+        reply: `${reply} Please confirm the contact person.`,
+      }),
+    ).toMatchObject({ ok: true });
+    const saved = (await service.inbox('qamar'))?.items.find((item) => item.id === id);
+    expect(saved?.assessment?.quote?.totalMinor).toBe(1784475);
   });
 
   test('database deduplicates redeliveries by tenant, channel and provider message ID', async () => {

@@ -6,11 +6,14 @@ import {
   databaseUrl,
   drafts,
   messages,
-  receivingChannels,
   withTenant,
 } from '@trustdesk/db';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { loadPricingContext } from '../pricing/context.ts';
+import { evaluateRequest } from '../pricing/evaluate.ts';
+import { PricingRequest } from '../pricing/model.ts';
+import { renderReply } from '../pricing/render.ts';
 import { DraftEvidence, Inbox } from './model.ts';
 
 const SourceEvent = z.object({
@@ -33,6 +36,9 @@ export async function seedInbox(database: Database) {
       .parse(raw)
       .items.map((item) => ({ ...item, outbox: null })),
   });
+  const requests = z
+    .record(z.string(), PricingRequest)
+    .parse(await Bun.file(new URL('../../../../seed/inbox-requests.json', import.meta.url)).json());
   const events = (await Bun.file(new URL('../../../../seed/events.jsonl', import.meta.url)).text())
     .trim()
     .split('\n')
@@ -48,18 +54,18 @@ export async function seedInbox(database: Database) {
       })
       .sort((a, b) => Date.parse(a.event.received_at) - Date.parse(b.event.received_at));
     await withTenant(database, tenantId, async (tx) => {
+      const pricing = await loadPricingContext(tx, tenantId, '2026-11-01');
       for (const entry of source) {
         const { item, event, conversationId } = entry;
-        const [mapping] = await tx
-          .select()
-          .from(receivingChannels)
-          .where(
+        const mapping = await tx.query.receivingChannels.findFirst({
+          columns: { tenantId: true },
+          where: (channel, { and, eq }) =>
             and(
-              eq(receivingChannels.tenantId, tenantId),
-              eq(receivingChannels.channel, event.channel),
-              eq(receivingChannels.address, event.to),
+              eq(channel.tenantId, tenantId),
+              eq(channel.channel, event.channel),
+              eq(channel.address, event.to),
             ),
-          );
+        });
         if (!mapping)
           throw new Error(`Event ${event.event_id} does not belong to its seeded business.`);
         const conversationMessages = source.filter(
@@ -77,6 +83,11 @@ export async function seedInbox(database: Database) {
           })
           .onConflictDoNothing();
         await tx
+          .select()
+          .from(conversations)
+          .where(and(eq(conversations.tenantId, tenantId), eq(conversations.id, conversationId)))
+          .for('update');
+        await tx
           .insert(messages)
           .values({
             tenantId,
@@ -90,18 +101,54 @@ export async function seedInbox(database: Database) {
             receivedAt: new Date(event.received_at),
           })
           .onConflictDoNothing();
-        await tx
-          .insert(drafts)
-          .values({
+        const request = requests[item.id];
+        if (!request) throw new Error(`Missing structured sample request for ${item.id}.`);
+        const assessment =
+          item.status === 'needs_approval' ? evaluateRequest(pricing, request) : null;
+        const evidence = DraftEvidence.parse({
+          ...item,
+          assessment,
+          quote: assessment ? assessment.quote : item.quote,
+          reasons: assessment ? assessment.reasons : item.reasons,
+          missing: assessment ? assessment.missing : item.missing,
+          recommendedAction:
+            assessment?.disposition === 'hand_off' ? 'hand_off' : item.recommendedAction,
+        });
+        const reply = assessment ? renderReply(assessment, pricing.tenant.faq) : item.draftReply;
+        const [existing] = await tx
+          .select()
+          .from(drafts)
+          .where(and(eq(drafts.tenantId, tenantId), eq(drafts.id, item.id)))
+          .for('update');
+        if (!existing) {
+          await tx.insert(drafts).values({
             tenantId,
             id: item.id,
             messageId: event.event_id,
             revision: item.revision,
             status: item.status,
-            originalReply: item.draftReply,
-            evidence: DraftEvidence.parse(item),
-          })
-          .onConflictDoNothing();
+            originalReply: reply,
+            evidence,
+          });
+        } else if (
+          existing.status === 'needs_approval' &&
+          assessment &&
+          (DraftEvidence.parse(existing.evidence).assessment?.fingerprint !==
+            assessment.fingerprint ||
+            existing.originalReply !== reply)
+        ) {
+          // Upgrade only unreviewed samples. The old seed remains archived; clients holding an older revision must refresh.
+          await tx
+            .update(drafts)
+            .set({ originalReply: reply, evidence, revision: existing.revision + 1 })
+            .where(
+              and(
+                eq(drafts.tenantId, tenantId),
+                eq(drafts.id, item.id),
+                eq(drafts.status, 'needs_approval'),
+              ),
+            );
+        }
       }
     });
   }

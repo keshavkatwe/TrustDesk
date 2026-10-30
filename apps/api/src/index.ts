@@ -1,4 +1,11 @@
-import { createInboxService } from '@trustdesk/core';
+import {
+  createDraftingService,
+  createInboxService,
+  createOpenAIProvider,
+  createReceiveService,
+  draftPublisher,
+  queueClient,
+} from '@trustdesk/core';
 import { createDatabase, databaseUrl } from '@trustdesk/db';
 import { createApp } from './app.ts';
 
@@ -11,14 +18,29 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 const database = createDatabase(databaseUrl('DATABASE_URL'));
 // Synthetic local operator. Never resolve authorization from the customer body or URL alone.
 const inbox = createInboxService(database, ['qamar', 'rimal']);
-const app = createApp(inbox).listen({ port, hostname: '127.0.0.1' });
+const provider = process.env.OPENAI_API_KEY
+  ? createOpenAIProvider(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL)
+  : undefined;
+const drafting = createDraftingService(database, ['qamar', 'rimal'], provider);
+const queue = queueClient(databaseUrl('DATABASE_URL'));
+await queue.start();
+const receive = createReceiveService(database, ['qamar', 'rimal'], draftPublisher(queue));
+const app = createApp(inbox, drafting, receive).listen({
+  port,
+  hostname: '127.0.0.1',
+  idleTimeout: 60,
+});
 
 console.log(`TrustDesk API: http://localhost:${port}`);
 console.log(`OpenAPI: http://localhost:${port}/openapi`);
 
+let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
-    await app.stop();
+    if (stopping) return;
+    stopping = true;
+    if (app.server) await app.stop();
+    await queue.stop();
     await database.close();
     process.exit(0);
   });

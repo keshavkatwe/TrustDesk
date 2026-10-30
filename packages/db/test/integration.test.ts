@@ -8,6 +8,9 @@ import {
   approvers,
   catalogueRows,
   catalogueVersions,
+  conversations,
+  drafts,
+  messages,
   receivingChannels,
   tenants,
 } from '../src/schema.ts';
@@ -55,7 +58,7 @@ afterAll(async () => {
 });
 
 describe('real Postgres foundation', () => {
-  test('application role is restricted and all ten tables force RLS', async () => {
+  test('application role is restricted and all thirteen domain tables force RLS', async () => {
     const role = await app.pool.query(
       'select rolsuper, rolbypassrls, rolcreaterole, rolcreatedb from pg_roles where rolname = current_user',
     );
@@ -65,7 +68,7 @@ describe('real Postgres foundation', () => {
     const tables = await app.pool.query(
       "select relname, relrowsecurity, relforcerowsecurity, pg_get_userbyid(relowner) as owner from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r'",
     );
-    expect(tables.rows).toHaveLength(10);
+    expect(tables.rows).toHaveLength(13);
     expect(
       tables.rows.every(
         (table) =>
@@ -99,6 +102,107 @@ describe('real Postgres foundation', () => {
         ).toEqual([]);
       });
     }
+  });
+
+  test('nested relational queries retain default-deny and tenant-scoped visibility', async () => {
+    const include = {
+      approvers: true,
+      receivingChannels: true,
+      catalogueVersions: {
+        with: { rows: { columns: { tenantId: true, version: true, id: true } } },
+      },
+    } as const;
+    expect(await app.db.query.tenants.findMany({ columns: { id: true }, with: include })).toEqual(
+      [],
+    );
+    for (const tenantId of ['qamar', 'rimal']) {
+      await withTenant(app, tenantId, async (tx) => {
+        // Deliberately omit application filters to exercise RLS throughout nested relations.
+        const result = await tx.query.tenants.findMany({ columns: { id: true }, with: include });
+        expect(result.map((tenant) => tenant.id)).toEqual([tenantId]);
+        const tenant = result[0];
+        expect(tenant?.approvers).toHaveLength(2);
+        expect(tenant?.approvers.every((actor) => actor.tenantId === tenantId)).toBe(true);
+        expect(tenant?.receivingChannels).toHaveLength(tenantId === 'qamar' ? 3 : 2);
+        expect(tenant?.receivingChannels.every((channel) => channel.tenantId === tenantId)).toBe(
+          true,
+        );
+        expect(tenant?.catalogueVersions).toHaveLength(1);
+        expect(tenant?.catalogueVersions[0]?.rows).toHaveLength(10);
+        expect(tenant?.catalogueVersions[0]?.rows.every((row) => row.tenantId === tenantId)).toBe(
+          true,
+        );
+      });
+    }
+    expect(await app.db.query.tenants.findMany({ columns: { id: true }, with: include })).toEqual(
+      [],
+    );
+  });
+
+  test('relational workflow reads resolve colliding IDs and absent one-to-one records correctly', async () => {
+    const id = `relations-${randomUUID()}`;
+    const rollback = new Error('Discard relational fixtures');
+    await expect(
+      app.db.transaction(async (tx) => {
+        for (const tenantId of ['qamar', 'rimal']) {
+          await tx.execute(sql`select set_config('app.tenant_id', ${tenantId}, true)`);
+          await tx.insert(conversations).values({
+            tenantId,
+            id,
+            channel: 'whatsapp',
+            customer: `${tenantId}-${id}`,
+            latestSequence: 1,
+          });
+          await tx.insert(messages).values({
+            tenantId,
+            id,
+            conversationId: id,
+            sequence: 1,
+            channel: 'whatsapp',
+            channelMessageId: id,
+            sourceEvent: id,
+            body: `${tenantId} only`,
+            receivedAt: new Date(),
+          });
+          await tx.insert(drafts).values({
+            tenantId,
+            id,
+            messageId: id,
+            status: 'needs_approval',
+            originalReply: `${tenantId} reply`,
+            evidence: {},
+          });
+        }
+        for (const tenantId of ['qamar', 'rimal']) {
+          await tx.execute(sql`select set_config('app.tenant_id', ${tenantId}, true)`);
+          const result = await tx.query.drafts.findMany({
+            where: (draft, { eq }) => eq(draft.id, id),
+            with: {
+              message: { with: { conversation: true, aiRuns: true, eventReceipts: true } },
+              review: { with: { outbox: { with: { delivery: true } } } },
+              sourceRuns: { with: { sourceDraft: true } },
+              resultRuns: { with: { resultDraft: true } },
+            },
+          });
+          expect(result).toHaveLength(1);
+          expect(result[0]).toMatchObject({
+            tenantId,
+            originalReply: `${tenantId} reply`,
+            message: {
+              tenantId,
+              body: `${tenantId} only`,
+              conversation: { tenantId, customer: `${tenantId}-${id}` },
+              aiRuns: [],
+              eventReceipts: [],
+            },
+            review: null,
+            sourceRuns: [],
+            resultRuns: [],
+          });
+        }
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
   });
 
   test('seed preserves source identities, language, policies and exact catalogue rates; repeating it is safe', async () => {

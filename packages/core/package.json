@@ -5,16 +5,21 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./inbox/model": "./src/inbox/model.ts"
+    "./inbox/model": "./src/inbox/model.ts",
+    "./ai/model": "./src/ai/model.ts",
+    "./receive/model": "./src/receive/model.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "inbox:seed": "bun src/inbox/seed.ts",
-    "inbox:test": "bun test ./test/"
+    "inbox:test": "bun test ./test/",
+    "queue:setup": "bun src/queue/setup.ts"
   },
   "dependencies": {
     "@trustdesk/db": "workspace:*",
     "drizzle-orm": "0.45.4",
+    "openai": "7.45.1",
+    "pg-boss": "12.38.0",
     "zod": "4.6.7"
   }
 }

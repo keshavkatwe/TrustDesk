@@ -11,6 +11,29 @@ const variants: Record<InboxItem['status'], ComponentProps<typeof Badge>['varian
   superseded: 'secondary',
 };
 
-export function StatusBadge({ status }: { status: InboxItem['status'] }) {
+export function StatusBadge({
+  status,
+  processingState,
+  outboxStatus,
+}: {
+  status: InboxItem['status'];
+  processingState?: InboxItem['processingState'];
+  outboxStatus?: NonNullable<InboxItem['outbox']>['status'];
+}) {
+  if (status === 'approved' && outboxStatus === 'simulated_sent')
+    return <Badge variant="success">Sent · simulated</Badge>;
+  if (status === 'approved' && outboxStatus === 'cancelled')
+    return <Badge variant="destructive">Send cancelled</Badge>;
+  if (
+    status === 'needs_approval' &&
+    (processingState === 'queued' || processingState === 'processing')
+  )
+    return (
+      <Badge variant="info">
+        {processingState === 'queued' ? 'Queued for drafting' : 'Preparing draft'}
+      </Badge>
+    );
+  if (status === 'needs_approval' && processingState === 'failed')
+    return <Badge variant="destructive">Draft failed</Badge>;
   return <Badge variant={variants[status]}>{statuses[status]}</Badge>;
 }

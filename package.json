@@ -18,9 +18,11 @@
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:generate": "bun scripts/with-env.ts turbo run db:generate",
-    "db:migrate": "bun scripts/with-env.ts turbo run db:migrate",
+    "db:migrate": "bun scripts/with-env.ts turbo run queue:setup",
     "db:seed": "bun scripts/with-env.ts turbo run inbox:seed",
     "db:test": "bun scripts/with-env.ts turbo run inbox:test",
+    "db:studio": "bun scripts/with-env.ts turbo run db:studio --filter=@trustdesk/db",
+    "replay:seed": "bun scripts/replay.ts",
     "test": "bun test apps/api/src apps/web/src/libs packages/db/src packages/core/src",
     "check": "bun run lint && bun run typecheck && bun run test && bun run build"
   },

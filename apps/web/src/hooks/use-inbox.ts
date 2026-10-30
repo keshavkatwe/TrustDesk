@@ -5,7 +5,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import type { Tenant } from '@/types/api';
 
 export function useInbox(tenantId: Tenant['id']) {
-  const inbox = useQuery({ ...getInboxOptions({ path: { tenantId } }), retry: false });
+  const inbox = useQuery({
+    ...getInboxOptions({ path: { tenantId } }),
+    retry: false,
+    refetchInterval: 2000,
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filter, setFilter] = useState('needs_approval');
   const [search, setSearch] = useState('');
@@ -20,11 +24,24 @@ export function useInbox(tenantId: Tenant['id']) {
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase().trim()),
   );
-  const selected = selectedId
+  let selected = selectedId
     ? items.find((item) => item.id === selectedId)
     : !isMobile
       ? matching[0]
       : undefined;
+  // Follow the placeholder/new-message chain while viewing the live queue. History stays selectable.
+  for (
+    let depth = 0;
+    depth < items.length &&
+    filter !== 'superseded' &&
+    selected?.status === 'superseded' &&
+    selected.supersededBy;
+    depth++
+  ) {
+    const next = items.find((item) => item.id === selected?.supersededBy);
+    if (!next) break;
+    selected = next;
+  }
   const pending = items.filter((item) => item.status === 'needs_approval').length;
 
   function clearFilters() {

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@trustdesk/core": "workspace:*"
+    "@trustdesk/core": "workspace:*",
+    "@trustdesk/db": "workspace:*"
   }
 }
