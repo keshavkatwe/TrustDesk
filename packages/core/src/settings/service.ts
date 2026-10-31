@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import {
   CommercialRules,
   type Database,
@@ -8,13 +8,22 @@ import {
 } from '@trustdesk/db';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODEL, PROMPT_VERSION } from '../ai/model.ts';
-import { formatMinor } from '../pricing/decimal.ts';
 import { ENGINE_VERSION } from '../pricing/evaluate.ts';
-import { type BusinessRules, Settings, UpdateSettings } from './model.ts';
+import { type Failure, failure } from '../result.ts';
+import { Settings, UpdateSettings } from './model.ts';
+import {
+  normalizeRules,
+  rulesFromTenant,
+  rulesPatch,
+  settingsVersion,
+  validateRules,
+} from './rules.ts';
+
+export { rulesFromTenant } from './rules.ts';
 
 type SettingsResult =
   | { ok: true; changed: boolean }
-  | { ok: false; code: 'not_found' | 'invalid' | 'conflict'; message: string };
+  | Failure<'not_found' | 'invalid' | 'conflict'>;
 
 export function createSettingsService(
   database: Database,
@@ -60,15 +69,10 @@ export function createSettingsService(
       });
     },
     async update(tenantId: string, raw: unknown): Promise<SettingsResult> {
-      if (!allowed.has(tenantId))
-        return { ok: false, code: 'not_found', message: 'Business not found.' } as const;
+      if (!allowed.has(tenantId)) return failure('not_found', 'Business not found.');
       const input = UpdateSettings.safeParse(raw);
       if (!input.success)
-        return {
-          ok: false,
-          code: 'invalid',
-          message: 'Check the rule values and rental duration range.',
-        } as const;
+        return failure('invalid', 'Check the rule values and rental duration range.');
       return withTenant(database, tenantId, async (tx) => {
         // Serializes configuration changes with pricing's shared row lock.
         const [tenant] = await tx
@@ -76,55 +80,20 @@ export function createSettingsService(
           .from(tenants)
           .where(eq(tenants.id, tenantId))
           .for('update');
-        if (!tenant)
-          return { ok: false, code: 'not_found', message: 'Business not found.' } as const;
+        if (!tenant) return failure('not_found', 'Business not found.');
         if (settingsVersion(tenant) !== input.data.version)
-          return {
-            ok: false,
-            code: 'conflict',
-            message:
-              'Settings changed since you opened this form. Reload the current settings before saving.',
-          } as const;
+          return failure(
+            'conflict',
+            'Settings changed since you opened this form. Reload the current settings before saving.',
+          );
         const approver = await tx.query.approvers.findFirst({
           where: (p, { and, eq }) => and(eq(p.tenantId, tenantId), eq(p.id, input.data.approverId)),
         });
-        if (!approver)
-          return {
-            ok: false,
-            code: 'invalid',
-            message: 'Choose a named approver from this business.',
-          } as const;
+        if (!approver) return failure('invalid', 'Choose a named approver from this business.');
         const { reason } = input.data;
-        const rules = {
-          ...input.data.rules,
-          vatPercent: formatMinor(minorUnits(input.data.rules.vatPercent)),
-          discountApprovalPercent: formatMinor(
-            minorUnits(input.data.rules.discountApprovalPercent),
-          ),
-          minimumOrder: formatMinor(minorUnits(input.data.rules.minimumOrder)),
-        };
-        if (tenantId === 'rimal' && rules.autoSend !== 'off')
-          return {
-            ok: false,
-            code: 'invalid',
-            message: 'Automatic sending must remain off for Rimal.',
-          } as const;
-        const commercial = CommercialRules.parse(tenant.commercialRules);
-        const crewValues = [
-          rules.stageThresholdM2,
-          rules.screenThresholdM2,
-          rules.crewShiftsPerOrder,
-        ];
-        if (
-          commercial.crew
-            ? crewValues.some((value) => value === null)
-            : crewValues.some((value) => value !== null)
-        )
-          return {
-            ok: false,
-            code: 'invalid',
-            message: 'Crew settings must match the configured catalogue services.',
-          } as const;
+        const rules = normalizeRules(input.data.rules);
+        const rejection = validateRules(tenant, rules);
+        if (rejection) return rejection;
         const before = rulesFromTenant(tenant);
         // A save of unchanged values creates neither a revision nor an audit entry.
         if (JSON.stringify(before) === JSON.stringify(rules))
@@ -132,29 +101,7 @@ export function createSettingsService(
         const id = randomUUID();
         await tx
           .update(tenants)
-          .set({
-            vatBasisPoints: Number(minorUnits(rules.vatPercent)),
-            discountThresholdBasisPoints: Number(minorUnits(rules.discountApprovalPercent)),
-            minimumOrderMinor: minorUnits(rules.minimumOrder),
-            serviceAreas: rules.serviceAreas,
-            faq: rules.faq,
-            autoSend: rules.autoSend,
-            commercialRules: {
-              ...commercial,
-              version: `settings-${id}`,
-              minimumRentalMonths: rules.minimumRentalMonths,
-              maximumRentalMonths: rules.maximumRentalMonths,
-              delivery: { ...commercial.delivery, basis: rules.deliveryBasis },
-              crew: commercial.crew
-                ? {
-                    ...commercial.crew,
-                    stageThresholdM2: rules.stageThresholdM2,
-                    screenThresholdM2: rules.screenThresholdM2,
-                    shiftsPerOrder: rules.crewShiftsPerOrder,
-                  }
-                : null,
-            },
-          })
+          .set(rulesPatch(tenant, rules, id))
           .where(eq(tenants.id, tenantId));
         await tx.insert(settingsChanges).values({
           tenantId,
@@ -171,31 +118,4 @@ export function createSettingsService(
   };
 }
 
-type StoredTenant = typeof tenants.$inferSelect;
-export function rulesFromTenant(tenant: StoredTenant): BusinessRules {
-  const commercial = CommercialRules.parse(tenant.commercialRules);
-  return {
-    vatPercent: formatMinor(BigInt(tenant.vatBasisPoints)),
-    discountApprovalPercent: formatMinor(BigInt(tenant.discountThresholdBasisPoints)),
-    minimumOrder: formatMinor(tenant.minimumOrderMinor),
-    serviceAreas: tenant.serviceAreas,
-    faq: tenant.faq,
-    autoSend: tenant.autoSend,
-    minimumRentalMonths: commercial.minimumRentalMonths,
-    maximumRentalMonths: commercial.maximumRentalMonths,
-    deliveryBasis: commercial.delivery.basis,
-    stageThresholdM2: commercial.crew?.stageThresholdM2 ?? null,
-    screenThresholdM2: commercial.crew?.screenThresholdM2 ?? null,
-    crewShiftsPerOrder: commercial.crew?.shiftsPerOrder ?? null,
-  };
-}
-function settingsVersion(tenant: StoredTenant) {
-  return createHash('sha256')
-    .update(JSON.stringify({ rules: rulesFromTenant(tenant), commercial: tenant.commercialRules }))
-    .digest('hex');
-}
-function minorUnits(value: string) {
-  const [whole = '0', fraction = ''] = value.split('.');
-  return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));
-}
 export type SettingsService = ReturnType<typeof createSettingsService>;

@@ -15,7 +15,7 @@ export async function lockConversation(
   return conversation;
 }
 
-export async function lockDraft(tx: TenantTransaction, tenantId: string, draftId: string) {
+async function lockDraft(tx: TenantTransaction, tenantId: string, draftId: string) {
   const [draft] = await tx
     .select()
     .from(drafts)
@@ -23,3 +23,37 @@ export async function lockDraft(tx: TenantTransaction, tenantId: string, draftId
     .for('update');
   return draft;
 }
+
+export async function lockEnquiryDraft(tx: TenantTransaction, tenantId: string, id: string) {
+  const target = await tx.query.drafts.findFirst({
+    columns: { id: true },
+    where: (draft, { and, eq }) => and(eq(draft.tenantId, tenantId), eq(draft.id, id)),
+    with: { message: { columns: { conversationId: true } } },
+  });
+  if (!target) return null;
+  const conversation = await lockConversation(tx, tenantId, target.message.conversationId);
+  const draft = await lockDraft(tx, tenantId, id);
+  if (!draft || !conversation) return null;
+  const message = await tx.query.messages.findFirst({
+    where: (message, { and, eq }) =>
+      and(eq(message.tenantId, tenantId), eq(message.id, draft.messageId)),
+  });
+  const latest = await tx.query.drafts.findFirst({
+    columns: { id: true },
+    where: (candidate, { and, eq }) =>
+      and(eq(candidate.tenantId, tenantId), eq(candidate.messageId, draft.messageId)),
+    orderBy: (candidate, { desc }) => desc(candidate.version),
+  });
+  if (!message) return null;
+  return {
+    draft,
+    conversation,
+    message,
+    isCurrent:
+      draft.status === 'needs_approval' &&
+      latest?.id === id &&
+      message.sequence === conversation.latestSequence,
+  };
+}
+
+export type LockedDraft = NonNullable<Awaited<ReturnType<typeof lockEnquiryDraft>>>;

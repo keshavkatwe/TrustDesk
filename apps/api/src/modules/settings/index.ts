@@ -1,20 +1,17 @@
 import type { SettingsService } from '@trustdesk/core';
-import { Elysia } from 'elysia';
+import { createController } from '../../controller.ts';
 import { InboxError, InboxParams, Settings, SettingsSaved, UpdateSettings } from './model.ts';
+
+const errorStatus = { not_found: 404, conflict: 409, invalid: 422 } as const;
 
 export function createSettingsModule(service?: SettingsService) {
   const unavailable = {
     message: 'Settings are unavailable. Check the API and database, then try again.',
   };
-  return new Elysia({ name: 'settings' })
-    .onError(({ code, status }) =>
-      status(
-        code === 'VALIDATION' ? 422 : 503,
-        code === 'VALIDATION'
-          ? { message: 'Invalid settings. Check percentages, amounts and rental limits.' }
-          : unavailable,
-      ),
-    )
+  return createController('settings', {
+    invalid: 'Invalid settings. Check percentages, amounts and rental limits.',
+    unavailable: unavailable.message,
+  })
     .get(
       '/tenants/:tenantId/settings',
       async ({ params, status }) => {
@@ -39,7 +36,7 @@ export function createSettingsModule(service?: SettingsService) {
         if (!service) return status(503, unavailable);
         const result = await service.update(params.tenantId, body);
         if (result.ok) return { changed: result.changed };
-        return status(result.code === 'not_found' ? 404 : result.code === 'conflict' ? 409 : 422, {
+        return status(errorStatus[result.code], {
           message: result.message,
         });
       },

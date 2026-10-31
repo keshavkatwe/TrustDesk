@@ -16,6 +16,7 @@ The application now supports explicit OpenAI request extraction through the Resp
 | Follow Elysia's feature-module guidance. | Thin feature controllers map core outcomes to HTTP responses; business services do not depend on Elysia context. |
 | Use stock shadcn components and the selected preset. | Preserved component geometry and the Mist/Teal/Inter preset; composed the inbox and review screens from existing primitives. |
 | Use Drizzle query APIs throughout application reads. | Defined composite tenant relations and converted services, recovery and seed reads to `findMany/findFirst`, using `with` for related data; retained row locks/predicate subqueries and verified exact top-level bigint reads. |
+| Simplify the complete backend for readability, researching established patterns first. | Kept Elysia feature controllers and plain core services; separated orchestration from queries/rules, shared error/locking behavior and replaced worker shutdown polling with an awaited promise. No new dependency was needed. |
 
 ## AI errors and corrections
 
@@ -28,12 +29,13 @@ The application now supports explicit OpenAI request extraction through the Resp
 | The review confirmation still said “not sent” after simulated dispatch completed. | Live browser verification exposed disagreement between the label and persisted delivery outcome. | Derived status and confirmation text from the saved delivery result. |
 | Classified OpenAI timeouts by `error.name`, but SDK subclasses inherit `Error`. | Restricted-role regression tests reproduced timeout and connection failures being saved as generic provider errors. | Check SDK error classes and HTTP statuses; show actionable saved failure messages and preserve explicit retry without overwriting drafts. |
 | Test enquiry regenerated the customer identifier whenever its dialog opened, splitting follow-ups into separate conversations. | Comparing saved customer identities with form state lifecycle. | Retain channel/customer in the parent widget while issuing a fresh message ID per opening; browser reopen checks and a four-message/one-conversation Postgres regression pass. |
+| A mechanical pricing refactor altered the missing-delivery-rate reason text. | Reviewing the extracted calculation against the original. | Restored the text, added missing mandatory fee/rate cases and compared full assessments, reason order and fingerprints against the original evaluator. |
 
 ## Verification evidence
 
 The following checks were executed through Codex; they are not independent human sign-off:
 
-- `bun run check`: formatting/lint, workspace and root TypeScript checks, 39 unit/HTTP tests and application builds passed.
+- `bun run check`: formatting/lint, workspace and root TypeScript checks, 40 unit/HTTP tests and application builds passed.
 - `bun run db:test`: 67 real Postgres tests passed using separate application and migration roles. Coverage includes forced tenant RLS, nested relational visibility/default-deny, colliding IDs across tenants, cross-business references, duplicate-message constraints, four different messages sharing one conversation, pooled tenant context, competing reviews, stale drafts, current-rule rechecks and atomic review/outbox rollback. Additional checks preserve source bigint values above JavaScript's safe range and filter recorded deliveries before the 25-item recovery limit. Drafting checks include one active call across pools, invalid/refused/truncated output, foreign SKUs, interrupted-run recovery, review-during-inference, preserved draft provenance after failure, version ordering and eight provider-error/retry cases without private exception text. New checks confirm late expired responses retain usage without replacing drafts, pricing changes during inference reject output, and recovery preserves active attempts and other businesses without requeuing work.
 - Pricing tests cover exact rounding, source rates, discount thresholds, stage-deck conversion, mandatory crew, delivery basis, minimum orders, budgets and automatic-send eligibility.
 - Browser checks exercised Arabic replies, business switching, mobile layout, computed quote evidence and rejection of an altered total. API-process restart verification confirmed persisted review/edit/outbox data. New drafting controls were checked at 390px and desktop width, including unsaved-edit protection.
@@ -48,7 +50,9 @@ The following checks were executed through Codex; they are not independent human
 - Activity/Settings verification covers category filtering before the recent-100 limit, colliding source IDs across businesses, sample/simulation provenance, named rule-change snapshots, stale editor races, exact decimal conversion, no-op saves, append-only history, audit-failure rollback and configuration locks shared with pricing. Browser checks verified activity search/details, business switching, unchanged settings submission, Rimal auto-send-off and 390px layouts. Changed saves were exercised against the isolated test database; local demo rule values were preserved.
 - Some reruns encountered worker/drafting timing timeouts. The affected suites passed separately and together, followed by a complete 67-test database pass. The cause was not established; timing limits and behavioral assertions remain intact. The concurrency test now reports an early claim failure instead of waiting indefinitely for provider entry.
 
-Combined result: 106 tests passed. These engineering tests are distinct from the challenge's planned evaluation gold set.
+- Backend readability verification retained all 67 Postgres passes. A temporary comparison against the original evaluator matched 10,200 varied inputs plus 47 evaluations from pricing tests, including fingerprints and rejected contexts. Generated OpenAPI remained unchanged. The added regression covers missing mandatory fee rows/rates without invented charges.
+
+Combined result: 107 tests passed. These engineering tests are distinct from the challenge's planned evaluation gold set.
 
 Trust was placed in generated code only after source inspection and relevant checks. SQL generation required inspection and database execution; process exit status alone was insufficient. Browser rendering and interaction checks supplemented TypeScript/build checks. Independent human technical verification and human-labelled judge calibration have not been recorded.
 

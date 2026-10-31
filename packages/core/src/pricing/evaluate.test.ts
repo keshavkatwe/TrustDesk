@@ -451,3 +451,42 @@ test('controlled English/Arabic reply uses the computed total; edits cannot chan
   expect(sameCommercialFacts(english, english.replace('17844.75', '1.00'))).toBe(false);
   expect(sameCommercialFacts(english, english.replace('AED', 'SAR'))).toBe(false);
 });
+
+test('missing mandatory fee rows or rates block approval without inventing a charge', () => {
+  const cases = [
+    {
+      tenantId: 'qamar',
+      feeSku: 'Q-SVC-001',
+      rate: 'flatMinor' as const,
+      reason: 'missing_delivery_rate',
+      request: { ...base, delivery: 'requested' },
+    },
+    {
+      tenantId: 'rimal',
+      feeSku: 'R-CRW-001',
+      rate: 'perShiftMinor' as const,
+      reason: 'missing_crew_rate',
+      request: {
+        ...base,
+        location: 'Riyadh',
+        lines: [{ ...base.lines[0], sku: 'R-STG-001', quantity: '24', unit: 'm2', mode: 'day' }],
+      },
+    },
+  ];
+  for (const scenario of cases) {
+    for (const removeRow of [false, true]) {
+      const ctx = context(scenario.tenantId);
+      ctx.tenant.minimumOrderMinor = 0n;
+      ctx.rows = removeRow
+        ? ctx.rows.filter((row) => row.id !== scenario.feeSku)
+        : ctx.rows.map((row) =>
+            row.id === scenario.feeSku ? { ...row, [scenario.rate]: null } : row,
+          );
+      const result = evaluateRequest(ctx, scenario.request);
+      expect(result.blockApproval).toBe(true);
+      expect(result.quote?.complete).toBe(false);
+      expect(codes(result)).toContain(scenario.reason);
+      expect(result.quote?.lines.some((line) => line.sku === scenario.feeSku)).toBe(false);
+    }
+  }
+});

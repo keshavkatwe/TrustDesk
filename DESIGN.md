@@ -22,6 +22,8 @@ Planned proof: versioned cases → real outputs → code checks + calibrated jud
 
 Thin Elysia feature modules contain controllers and Zod contracts; shared core has no HTTP context/status objects. App construction/spec export needs no database, listener or key. Runtime creates pools/queue clients; it uses the restricted application role and never runs migrations. Local routes bind to loopback. The operator is explicitly allowed Qamar/Rimal; the reviewer picker and incoming adapter are simulated identity, not production authentication.
 
+Core service entry points coordinate named business steps, with feature-local query, review, receipt, AI claim/completion and rule helpers. Expected rejections share a small typed result; controller exception handling and draft locking are shared. Pricing separates request policy, product lines and invoice totals while retaining its engine version/fingerprint. See [backend reading guide](docs/BACKEND.md).
+
 Fourteen domain tables force RLS. Non-superuser migration/runtime roles cannot bypass it. `withTenant` sets parameterized transaction-local context on the pooled connection; explicit filters and tenant-inclusive foreign keys remain. Catalogues, routing and business identity are runtime read-only. Only editable rule columns have runtime update grants. Receipts, reviews, delivery results, settings changes and outbox intent are append-only to runtime. The separate `pgboss` schema contains system job identifiers/outcomes, with runtime DML but no schema creation/ownership. It contains no customer text/catalogues. Queue setup is pinned to pg-boss 12.38.0 and runs with the migration role.
 
 ## Receive, queue and drafting

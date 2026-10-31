@@ -1,5 +1,5 @@
 import type { QualityService } from '@trustdesk/core';
-import { Elysia } from 'elysia';
+import { createController } from '../../controller.ts';
 import {
   InboxError,
   InboxParams,
@@ -13,13 +13,10 @@ const unavailable = {
 };
 
 export function createQualityModule(service?: QualityService) {
-  return new Elysia({ name: 'quality' })
-    .onError(({ code, status }) =>
-      status(
-        code === 'VALIDATION' ? 422 : 503,
-        code === 'VALIDATION' ? { message: 'Invalid quality request.' } : unavailable,
-      ),
-    )
+  return createController('quality', {
+    invalid: 'Invalid quality request.',
+    unavailable: unavailable.message,
+  })
     .get(
       '/tenants/:tenantId/quality',
       async ({ params, status }) => {

@@ -1,5 +1,5 @@
 import type { InboxService } from '@trustdesk/core';
-import { Elysia } from 'elysia';
+import { createController } from '../../controller.ts';
 import {
   Inbox,
   InboxError,
@@ -23,13 +23,10 @@ const unavailable = {
 };
 
 export function createInboxModule(service?: InboxService) {
-  return new Elysia({ name: 'inbox' })
-    .onError(({ code, status }) => {
-      if (code === 'VALIDATION')
-        return status(422, { message: 'Invalid request. Check the fields and try again.' });
-      // Do not expose database queries or customer text through driver exceptions.
-      return status(503, unavailable);
-    })
+  return createController('inbox', {
+    invalid: 'Invalid request. Check the fields and try again.',
+    unavailable: unavailable.message,
+  })
     .get(
       '/workspace',
       async ({ status }) => (service ? service.workspace() : status(503, unavailable)),

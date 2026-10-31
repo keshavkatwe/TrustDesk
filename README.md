@@ -8,6 +8,7 @@ Turborepo workspace for the Trust Desk engineering challenge, with a Postgres-ba
 - [DESIGN.md](DESIGN.md): engineering design, assumptions, threat model and implementation status.
 - [AI-LOG.md](AI-LOG.md): actual AI mistakes, decisions and verification evidence.
 - [Project skills](docs/SKILLS.md): relevant skills, pinned sources and version limits.
+- [Reading the backend](docs/BACKEND.md): feature entry points, workflow steps, transactions and error handling.
 
 ## Start
 

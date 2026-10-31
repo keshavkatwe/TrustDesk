@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TenantId } from '../inbox/model.ts';
+import type { Failure } from '../result.ts';
 export const SourceEvent = z.object({
   event_id: z.string().min(1).max(200),
   channel: z.enum(['whatsapp', 'email', 'webform']),
@@ -26,3 +27,7 @@ export const ReceiptResult = z.object({
 });
 export type ReceiptResult = z.infer<typeof ReceiptResult>;
 export type SourceEvent = z.infer<typeof SourceEvent>;
+
+export type ReceiveResult =
+  | ({ ok: true } & ReceiptResult)
+  | Failure<'invalid_request' | 'unknown_destination' | 'message_conflict'>;

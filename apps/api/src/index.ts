@@ -18,28 +18,22 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('API_PORT must be an integer between 1 and 65535.');
 }
 
-const database = createDatabase(databaseUrl('DATABASE_URL'));
+const url = databaseUrl('DATABASE_URL');
+const database = createDatabase(url);
+const allowedTenantIds = ['qamar', 'rimal'] as const;
 // Synthetic local operator. Never resolve authorization from the customer body or URL alone.
-const inbox = createInboxService(database, ['qamar', 'rimal']);
+const inbox = createInboxService(database, allowedTenantIds);
 const provider = process.env.OPENAI_API_KEY
   ? createOpenAIProvider(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL)
   : undefined;
-const drafting = createDraftingService(database, ['qamar', 'rimal'], provider);
-const queue = queueClient(databaseUrl('DATABASE_URL'));
+const drafting = createDraftingService(database, allowedTenantIds, provider);
+const queue = queueClient(url);
 await queue.start();
-const receive = createReceiveService(database, ['qamar', 'rimal'], draftPublisher(queue));
-const quality = createQualityService(
-  database,
-  ['qamar', 'rimal'],
-  provider?.model ?? process.env.OPENAI_MODEL,
-);
-const activity = createActivityService(database, ['qamar', 'rimal']);
-const settings = createSettingsService(
-  database,
-  ['qamar', 'rimal'],
-  provider?.model ?? process.env.OPENAI_MODEL,
-  Boolean(provider),
-);
+const receive = createReceiveService(database, allowedTenantIds, draftPublisher(queue));
+const model = provider?.model ?? process.env.OPENAI_MODEL;
+const quality = createQualityService(database, allowedTenantIds, model);
+const activity = createActivityService(database, allowedTenantIds);
+const settings = createSettingsService(database, allowedTenantIds, model, Boolean(provider));
 const app = createApp({ inbox, drafting, receive, quality, activity, settings }).listen({
   port,
   hostname: '127.0.0.1',
