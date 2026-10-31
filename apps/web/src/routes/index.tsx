@@ -7,6 +7,8 @@ import { paths, routePatterns } from './paths';
 
 const InboxPage = lazy(() => import('@/pages/inbox-page'));
 const QualityPage = lazy(() => import('@/pages/quality-page'));
+const ActivityPage = lazy(() => import('@/pages/activity-page'));
+const SettingsPage = lazy(() => import('@/pages/settings-page'));
 
 export function AppRoutes() {
   return (
@@ -16,6 +18,8 @@ export function AppRoutes() {
         <Route index element={<Navigate to="inbox" replace />} />
         <Route path="inbox" element={<InboxPage />} />
         <Route path="quality" element={<QualityPage />} />
+        <Route path="activity" element={<ActivityPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

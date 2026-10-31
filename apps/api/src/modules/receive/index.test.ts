@@ -30,5 +30,5 @@ test('local receiving contract is key-free and validates before invoking the ada
       outcome: 'accepted',
     }),
   };
-  expect((await createApp(undefined, undefined, service).handle(req(event))).status).toBe(202);
+  expect((await createApp({ receive: service }).handle(req(event))).status).toBe(202);
 });

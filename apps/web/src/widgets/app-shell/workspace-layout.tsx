@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Outlet, useMatch, useNavigate, useParams } from 'react-router';
+import { matchPath, Outlet, useLocation, useNavigate, useParams } from 'react-router';
 import { RouteNotFound } from '@/components/route-not-found';
 import { Button } from '@/components/ui/button';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -12,7 +12,11 @@ export function WorkspaceLayout() {
   const { tenantId } = useParams();
   const workspace = useWorkspace();
   const navigate = useNavigate();
-  const isQuality = useMatch(routePatterns.quality);
+  const location = useLocation();
+  const page =
+    (['quality', 'activity', 'settings'] as const).find((page) =>
+      matchPath(routePatterns[page], location.pathname),
+    ) ?? 'inbox';
   if (workspace.isError)
     return (
       <main className="mx-auto max-w-xl p-8">
@@ -38,14 +42,12 @@ export function WorkspaceLayout() {
   return (
     <SidebarProvider className="h-svh overflow-hidden">
       <Button asChild variant="outline" className="sr-only focus:not-sr-only focus:absolute">
-        <a href={isQuality ? '#quality' : '#inbox'}>
-          Skip to {isQuality ? 'quality evidence' : 'inbox'}
-        </a>
+        <a href={`#${page}`}>Skip to {page === 'quality' ? 'quality evidence' : page}</a>
       </Button>
       <AppSidebar
         tenants={workspace.data.tenants}
         tenant={tenant}
-        onTenantChange={(id) => void navigate(isQuality ? paths.quality(id) : paths.inbox(id))}
+        onTenantChange={(id) => void navigate(paths[page](id))}
       />
       <SidebarInset className="min-w-0">
         <Suspense

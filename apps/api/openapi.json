@@ -4038,6 +4038,1139 @@
         }
       }
     },
+    "/tenants/{tenantId}/activity": {
+      "get": {
+        "operationId": "getActivity",
+        "tags": [
+          "activity"
+        ],
+        "summary": "Latest saved business activity, optionally filtered by category",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "receipt",
+                "draft",
+                "ai",
+                "review",
+                "delivery",
+                "settings"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "tenantId": {
+                      "type": "string",
+                      "enum": [
+                        "qamar",
+                        "rimal"
+                      ]
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    "limit": {
+                      "type": "number",
+                      "const": 100
+                    },
+                    "hasMore": {
+                      "type": "boolean"
+                    },
+                    "entries": {
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string",
+                            "enum": [
+                              "receipt",
+                              "draft",
+                              "ai",
+                              "review",
+                              "delivery",
+                              "settings"
+                            ]
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "actor": {
+                            "type": "string"
+                          },
+                          "outcome": {
+                            "type": "string"
+                          },
+                          "reference": {
+                            "type": "string"
+                          },
+                          "details": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "string"
+                                },
+                                "format": {
+                                  "type": "string",
+                                  "const": "timestamp"
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "value"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "category",
+                          "at",
+                          "title",
+                          "description",
+                          "actor",
+                          "outcome",
+                          "reference",
+                          "details"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "tenantId",
+                    "updatedAt",
+                    "limit",
+                    "hasMore",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/settings": {
+      "get": {
+        "operationId": "getSettings",
+        "tags": [
+          "settings"
+        ],
+        "summary": "Business rules, receiving channels, approvers and safe AI configuration",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "tenantId": {
+                      "type": "string",
+                      "enum": [
+                        "qamar",
+                        "rimal"
+                      ]
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "rules": {
+                      "type": "object",
+                      "properties": {
+                        "vatPercent": {
+                          "type": "string",
+                          "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                        },
+                        "discountApprovalPercent": {
+                          "type": "string",
+                          "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                        },
+                        "minimumOrder": {
+                          "type": "string",
+                          "pattern": "^\\d{1,12}(?:\\.\\d{1,2})?$"
+                        },
+                        "serviceAreas": {
+                          "minItems": 1,
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          }
+                        },
+                        "faq": {
+                          "maxItems": 30,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          }
+                        },
+                        "autoSend": {
+                          "type": "string",
+                          "enum": [
+                            "low_risk_only",
+                            "off"
+                          ]
+                        },
+                        "minimumRentalMonths": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "maximum": 1200
+                        },
+                        "maximumRentalMonths": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "maximum": 1200
+                        },
+                        "deliveryBasis": {
+                          "type": "string",
+                          "enum": [
+                            "order",
+                            "trip"
+                          ]
+                        },
+                        "stageThresholdM2": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "maximum": 10000
+                        },
+                        "screenThresholdM2": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "maximum": 10000
+                        },
+                        "crewShiftsPerOrder": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "maximum": 100
+                        }
+                      },
+                      "required": [
+                        "vatPercent",
+                        "discountApprovalPercent",
+                        "minimumOrder",
+                        "serviceAreas",
+                        "faq",
+                        "autoSend",
+                        "minimumRentalMonths",
+                        "maximumRentalMonths",
+                        "deliveryBasis",
+                        "stageThresholdM2",
+                        "screenThresholdM2",
+                        "crewShiftsPerOrder"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "business": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "sells": {
+                          "type": "string"
+                        },
+                        "location": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "AED",
+                            "SAR"
+                          ]
+                        },
+                        "languages": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "sells",
+                        "location",
+                        "timezone",
+                        "currency",
+                        "languages"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "approvers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "role"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "channels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "whatsapp",
+                              "email",
+                              "webform"
+                            ]
+                          },
+                          "address": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "channel",
+                          "address"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "commercial": {
+                      "type": "object",
+                      "properties": {
+                        "version": {
+                          "type": "string"
+                        },
+                        "deliverySku": {
+                          "type": "string"
+                        },
+                        "crewSku": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "stageDeckAreaM2": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "locationAliases": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "version",
+                        "deliverySku",
+                        "crewSku",
+                        "stageDeckAreaM2",
+                        "locationAliases"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "ai": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "string"
+                        },
+                        "promptVersion": {
+                          "type": "string"
+                        },
+                        "engineVersion": {
+                          "type": "string"
+                        },
+                        "providerConfigured": {
+                          "type": "boolean"
+                        },
+                        "trust": {
+                          "type": "string",
+                          "const": "supervised"
+                        },
+                        "delivery": {
+                          "type": "string",
+                          "const": "simulated"
+                        }
+                      },
+                      "required": [
+                        "model",
+                        "promptVersion",
+                        "engineVersion",
+                        "providerConfigured",
+                        "trust",
+                        "delivery"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "tenantId",
+                    "version",
+                    "rules",
+                    "business",
+                    "approvers",
+                    "channels",
+                    "commercial",
+                    "ai"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateSettings",
+        "tags": [
+          "settings"
+        ],
+        "summary": "Save business rules and named before/after audit record atomically",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "rules": {
+                    "type": "object",
+                    "properties": {
+                      "vatPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "discountApprovalPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "minimumOrder": {
+                        "type": "string",
+                        "pattern": "^\\d{1,12}(?:\\.\\d{1,2})?$"
+                      },
+                      "serviceAreas": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "faq": {
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        }
+                      },
+                      "autoSend": {
+                        "type": "string",
+                        "enum": [
+                          "low_risk_only",
+                          "off"
+                        ]
+                      },
+                      "minimumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "maximumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "deliveryBasis": {
+                        "type": "string",
+                        "enum": [
+                          "order",
+                          "trip"
+                        ]
+                      },
+                      "stageThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "screenThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "crewShiftsPerOrder": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "vatPercent",
+                      "discountApprovalPercent",
+                      "minimumOrder",
+                      "serviceAreas",
+                      "faq",
+                      "autoSend",
+                      "minimumRentalMonths",
+                      "maximumRentalMonths",
+                      "deliveryBasis",
+                      "stageThresholdM2",
+                      "screenThresholdM2",
+                      "crewShiftsPerOrder"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "version",
+                  "approverId",
+                  "reason",
+                  "rules"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "rules": {
+                    "type": "object",
+                    "properties": {
+                      "vatPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "discountApprovalPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "minimumOrder": {
+                        "type": "string",
+                        "pattern": "^\\d{1,12}(?:\\.\\d{1,2})?$"
+                      },
+                      "serviceAreas": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "faq": {
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        }
+                      },
+                      "autoSend": {
+                        "type": "string",
+                        "enum": [
+                          "low_risk_only",
+                          "off"
+                        ]
+                      },
+                      "minimumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "maximumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "deliveryBasis": {
+                        "type": "string",
+                        "enum": [
+                          "order",
+                          "trip"
+                        ]
+                      },
+                      "stageThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "screenThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "crewShiftsPerOrder": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "vatPercent",
+                      "discountApprovalPercent",
+                      "minimumOrder",
+                      "serviceAreas",
+                      "faq",
+                      "autoSend",
+                      "minimumRentalMonths",
+                      "maximumRentalMonths",
+                      "deliveryBasis",
+                      "stageThresholdM2",
+                      "screenThresholdM2",
+                      "crewShiftsPerOrder"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "version",
+                  "approverId",
+                  "reason",
+                  "rules"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "rules": {
+                    "type": "object",
+                    "properties": {
+                      "vatPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "discountApprovalPercent": {
+                        "type": "string",
+                        "pattern": "^\\d{1,3}(?:\\.\\d{1,2})?$"
+                      },
+                      "minimumOrder": {
+                        "type": "string",
+                        "pattern": "^\\d{1,12}(?:\\.\\d{1,2})?$"
+                      },
+                      "serviceAreas": {
+                        "minItems": 1,
+                        "maxItems": 20,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "faq": {
+                        "maxItems": 30,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 1000
+                        }
+                      },
+                      "autoSend": {
+                        "type": "string",
+                        "enum": [
+                          "low_risk_only",
+                          "off"
+                        ]
+                      },
+                      "minimumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "maximumRentalMonths": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 1200
+                      },
+                      "deliveryBasis": {
+                        "type": "string",
+                        "enum": [
+                          "order",
+                          "trip"
+                        ]
+                      },
+                      "stageThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "screenThresholdM2": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "crewShiftsPerOrder": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 1,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "vatPercent",
+                      "discountApprovalPercent",
+                      "minimumOrder",
+                      "serviceAreas",
+                      "faq",
+                      "autoSend",
+                      "minimumRentalMonths",
+                      "maximumRentalMonths",
+                      "deliveryBasis",
+                      "stageThresholdM2",
+                      "screenThresholdM2",
+                      "crewShiftsPerOrder"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "version",
+                  "approverId",
+                  "reason",
+                  "rules"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "changed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "changed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/healthz": {
       "get": {
         "operationId": "getHealth",

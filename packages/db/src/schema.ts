@@ -403,3 +403,29 @@ export const deliveries = pgTable(
     tenantPolicy(t.tenantId),
   ],
 );
+
+export const settingsChanges = pgTable(
+  'settings_changes',
+  {
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    id: text('id').notNull(),
+    approverId: text('approver_id').notNull(),
+    approverName: text('approver_name').notNull(),
+    reason: text('reason').notNull(),
+    before: jsonb('before').notNull(),
+    after: jsonb('after').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.approverId],
+      foreignColumns: [approvers.tenantId, approvers.id],
+    }),
+    index('settings_changes_tenant_time_idx').on(t.tenantId, t.createdAt),
+    check('settings_changes_reason', sql`length(btrim(${t.reason})) between 1 and 1000`),
+    tenantPolicy(t.tenantId),
+  ],
+);

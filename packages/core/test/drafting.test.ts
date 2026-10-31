@@ -234,7 +234,12 @@ test('competing pools invoke the provider only once; a review during inference w
     },
   };
   const first = createDraftingService(app, ['qamar'], slow).generate('qamar', id, { revision: 1 });
-  await entered.promise;
+  await Promise.race([
+    entered.promise,
+    first.then((result) => {
+      throw new Error(`Draft claim ended before reaching the provider: ${JSON.stringify(result)}`);
+    }),
+  ]);
   expect(
     await createDraftingService(other, ['qamar'], slow).generate('qamar', id, { revision: 1 }),
   ).toMatchObject({ ok: false, code: 'conflict' });

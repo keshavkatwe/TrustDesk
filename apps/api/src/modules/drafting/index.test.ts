@@ -25,14 +25,14 @@ test('drafting controller maps conflicts and provider failures without exposing 
     const service: DraftingService = {
       generate: async () => ({ ok: false, code, message: 'Safe failure' }),
     };
-    expect((await createApp(undefined, service).handle(request())).status).toBe(expected);
+    expect((await createApp({ drafting: service }).handle(request())).status).toBe(expected);
   }
   const service: DraftingService = {
     generate: async () => {
       throw new Error('Private prompt and key');
     },
   };
-  const response = await createApp(undefined, service).handle(request());
+  const response = await createApp({ drafting: service }).handle(request());
   expect(response.status).toBe(503);
   expect(await response.text()).not.toContain('Private');
 });

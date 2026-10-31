@@ -24,7 +24,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
@@ -45,6 +44,8 @@ export function AppSidebar({
   const { setOpenMobile } = useSidebar();
   const isInbox = useMatch(routePatterns.inbox);
   const isQuality = useMatch(routePatterns.quality);
+  const isActivity = useMatch(routePatterns.activity);
+  const isSettings = useMatch(routePatterns.settings);
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
@@ -75,15 +76,26 @@ export function AppSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {[
-                { label: 'Activity', icon: ActivityIcon },
-                { label: 'Settings', icon: SettingsIcon },
-              ].map(({ label, icon: Icon }) => (
+                {
+                  label: 'Activity',
+                  icon: ActivityIcon,
+                  href: paths.activity(tenant.id),
+                  active: Boolean(isActivity),
+                },
+                {
+                  label: 'Settings',
+                  icon: SettingsIcon,
+                  href: paths.settings(tenant.id),
+                  active: Boolean(isSettings),
+                },
+              ].map(({ label, icon: Icon, href, active }) => (
                 <SidebarMenuItem key={label}>
-                  <SidebarMenuButton disabled>
-                    <Icon />
-                    <span>{label}</span>
+                  <SidebarMenuButton asChild isActive={active}>
+                    <NavLink to={href} onClick={() => setOpenMobile(false)}>
+                      <Icon />
+                      <span>{label}</span>
+                    </NavLink>
                   </SidebarMenuButton>
-                  <SidebarMenuBadge>Later</SidebarMenuBadge>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

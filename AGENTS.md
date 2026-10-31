@@ -61,6 +61,8 @@ The source brief is the [Revent Lab Trust Desk Challenge, v1.2](https://claude.a
 - AI drafting lives in `core/src/ai`: one bounded call outside database transactions, durable attempt claim/completion, then code pricing/templates and staleness rechecks. Keep source-draft provenance separate from the latest generation attempt. Failed/regenerated outputs never overwrite terminal reviews. Only the API and worker receive `OPENAI_API_KEY`; never expose it through Vite or logs.
 - Record invalid output, provider failures, policy reasons, versions, and costs honestly. Use bounded retries and account for each message; do not hide failures behind success states.
 
+- Settings may update only the allowed business-rule columns, with a business-owned named approver, reason, current configuration fingerprint and atomic append-only before/after audit. Keep Rimal auto-send off. Pricing holds a shared tenant-row lock until its workflow transaction commits; settings take an exclusive lock. Identity, receiving destinations, catalogue prices, credentials and trust are outside this editor.
+
 ## Validation and evidence
 
 Run the checks relevant to the change. `bun run check` runs lint, TypeScript checks, HTTP contract, pricing/policy, exact money display, Unicode edit, business-date and source-decimal unit tests, and builds without a database. `bun run db:test` separately exercises real Postgres migrations, seeds, constraints, restricted-role RLS and durable approval races/rollback against a matching `*_test` database with separate app/migration roles. Add meaningful logic/database/browser tests as those features are implemented; do not invent test results or add tests that merely mirror a scaffold.

@@ -8,8 +8,7 @@ import { ReviewSummary } from '@/components/quality/review-summary';
 import { AgentConfiguration, TrustReadiness } from '@/components/quality/trust-readiness';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { WorkspaceHeader } from '@/components/workspace-header';
 import { LoadError, LoadingWorkspace } from '@/components/workspace-states';
 import { formatTimestamp } from '@/libs/date';
 import type { Tenant } from '@/types/api';
@@ -25,31 +24,22 @@ export function QualityWorkspace({ tenant }: { tenant: Tenant }) {
   const [runId, setRunId] = useState<string | null>(null);
   return (
     <>
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-3 md:px-6">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="h-5" />
-          <div>
-            <h1 className="font-semibold">Quality &amp; Trust</h1>
-            <p className="text-xs text-muted-foreground">
-              {tenant.shortName} · Evidence and agent readiness
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="warning">Supervised</Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            aria-label="Refresh quality evidence"
-            disabled={query.isFetching}
-            onClick={() => void query.refetch()}
-          >
-            <RefreshCwIcon data-icon="inline-start" />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-        </div>
-      </header>
+      <WorkspaceHeader
+        title="Quality & Trust"
+        description={`${tenant.shortName} · Evidence and agent readiness`}
+      >
+        <Badge variant="warning">Supervised</Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Refresh quality evidence"
+          disabled={query.isFetching}
+          onClick={() => void query.refetch()}
+        >
+          <RefreshCwIcon data-icon="inline-start" />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
+      </WorkspaceHeader>
       <div id="quality" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
         {query.isPending ? (
           <LoadingWorkspace />

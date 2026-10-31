@@ -1,9 +1,11 @@
 import {
+  createActivityService,
   createDraftingService,
   createInboxService,
   createOpenAIProvider,
   createQualityService,
   createReceiveService,
+  createSettingsService,
   draftPublisher,
   queueClient,
 } from '@trustdesk/core';
@@ -31,7 +33,14 @@ const quality = createQualityService(
   ['qamar', 'rimal'],
   provider?.model ?? process.env.OPENAI_MODEL,
 );
-const app = createApp(inbox, drafting, receive, quality).listen({
+const activity = createActivityService(database, ['qamar', 'rimal']);
+const settings = createSettingsService(
+  database,
+  ['qamar', 'rimal'],
+  provider?.model ?? process.env.OPENAI_MODEL,
+  Boolean(provider),
+);
+const app = createApp({ inbox, drafting, receive, quality, activity, settings }).listen({
   port,
   hostname: '127.0.0.1',
   idleTimeout: 60,

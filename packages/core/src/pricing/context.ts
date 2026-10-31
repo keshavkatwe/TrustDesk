@@ -1,4 +1,6 @@
 import type { TenantTransaction } from '@trustdesk/db';
+import { tenants } from '@trustdesk/db';
+import { eq } from 'drizzle-orm';
 import type { PricingContext } from './evaluate.ts';
 
 export async function loadPricingContext(
@@ -6,6 +8,8 @@ export async function loadPricingContext(
   tenantId: string,
   version: string,
 ): Promise<PricingContext> {
+  // Keep configuration stable until approval/dispatch/draft completion commits.
+  await tx.select({ id: tenants.id }).from(tenants).where(eq(tenants.id, tenantId)).for('share');
   // Keep money columns in top-level queries: pg decodes bigint exactly before any JSON nesting.
   const tenant = await tx.query.tenants.findFirst({
     where: (tenant, { eq }) => eq(tenant.id, tenantId),

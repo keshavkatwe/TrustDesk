@@ -1,3 +1,4 @@
+export { type ActivityService, createActivityService } from './activity/service.ts';
 export { createOpenAIProvider } from './ai/openai.ts';
 export { createDraftingService, type DraftingService } from './ai/service.ts';
 export { createDispatchService } from './dispatch/service.ts';
@@ -6,3 +7,4 @@ export { createQualityService, type QualityService } from './quality/service.ts'
 export { draftPublisher, queueClient } from './queue/client.ts';
 export { startWorker } from './queue/worker.ts';
 export { createReceiveService, type ReceiveService } from './receive/service.ts';
+export { createSettingsService, type SettingsService } from './settings/service.ts';

@@ -58,7 +58,7 @@ afterAll(async () => {
 });
 
 describe('real Postgres foundation', () => {
-  test('application role is restricted and all thirteen domain tables force RLS', async () => {
+  test('application role is restricted and all fourteen domain tables force RLS', async () => {
     const role = await app.pool.query(
       'select rolsuper, rolbypassrls, rolcreaterole, rolcreatedb from pg_roles where rolname = current_user',
     );
@@ -68,7 +68,7 @@ describe('real Postgres foundation', () => {
     const tables = await app.pool.query(
       "select relname, relrowsecurity, relforcerowsecurity, pg_get_userbyid(relowner) as owner from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r'",
     );
-    expect(tables.rows).toHaveLength(13);
+    expect(tables.rows).toHaveLength(14);
     expect(
       tables.rows.every(
         (table) =>

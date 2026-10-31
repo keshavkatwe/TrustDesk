@@ -50,7 +50,7 @@ test('quality controller returns saved evidence and hides missing or private dat
       return undefined;
     },
   };
-  const app = createApp(undefined, undefined, undefined, service);
+  const app = createApp({ quality: service });
   const response = await app.handle(request());
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual(overview);

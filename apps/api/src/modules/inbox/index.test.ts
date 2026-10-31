@@ -28,7 +28,7 @@ test('controller maps a stale draft to 409 and hides database exception details'
     inbox: async () => undefined,
     review: async () => ({ ok: false, code: 'conflict', message: 'Refresh this draft.' }),
   };
-  const app = createApp(service);
+  const app = createApp({ inbox: service });
   const conflict = await app.handle(reviewRequest(input));
   expect(conflict.status).toBe(409);
   expect(await conflict.json()).toEqual({ message: 'Refresh this draft.' });
