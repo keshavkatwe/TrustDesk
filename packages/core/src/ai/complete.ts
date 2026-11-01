@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { TenantTransaction } from '@trustdesk/db';
+import { queueAutomaticReply } from '../dispatch/automatic.ts';
 import { lockEnquiryDraft } from '../inbox/locks.ts';
 import { loadPricingContext } from '../pricing/context.ts';
 import { lockAttempt, saveLateCompletion, savePreparedDraft, saveRejectedDraft } from './data.ts';
@@ -28,12 +29,20 @@ export async function completeAttempt(
     return decision.result;
   }
 
-  const pricing = await loadPricingContext(tx, tenantId, claim.pricing.catalogue.version);
+  const pricing = await loadPricingContext(tx, tenantId, claim.pricing.catalogue.version, model);
   const prepared = prepareDraft(claim, decision.target, decision.output, pricing, randomUUID());
   if (prepared.kind === 'rejected') {
     await saveRejectedDraft(tx, tenantId, claim, metadata, prepared);
     return prepared.result;
   }
   await savePreparedDraft(tx, tenantId, claim, metadata, prepared);
+  await queueAutomaticReply(
+    tx,
+    tenantId,
+    prepared.draft.id,
+    pricing,
+    decision.output.request,
+    model,
+  );
   return { ok: true, id: prepared.draft.id, runId: claim.runId };
 }

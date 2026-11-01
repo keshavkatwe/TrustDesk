@@ -57,6 +57,20 @@
       "when": 1793387680958,
       "tag": "0007_optimal_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793530576524,
+      "tag": "0008_classy_blink",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793531632760,
+      "tag": "0009_funny_morg",
+      "breakpoints": true
     }
   ]
 }

@@ -166,7 +166,7 @@ test('quality evidence resolves colliding run IDs within tenant scope and never 
     estimatedCostUsd: '0.000000001',
     reviews: { approved: 1, edited: 1 },
   });
-  expect(overview?.trust).toEqual({ level: 'supervised', promotionAvailable: false });
+  expect(overview?.trust).toEqual({ level: 'supervised' });
   expect(overview?.configuration).toMatchObject({
     model: 'configured-model',
     autoSend: 'low_risk_only',
@@ -243,5 +243,5 @@ test('the operational evidence window is bounded to the latest 50 attempts', asy
   });
   expect(overview?.attempts[0]?.id).toBe(rows[54]?.id);
   expect(overview?.attempts.at(-1)?.id).toBe(rows[5]?.id);
-  expect(overview?.trust.promotionAvailable).toBe(false);
+  expect(overview?.trust.level).toBe('supervised');
 });

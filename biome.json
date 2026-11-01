@@ -15,7 +15,9 @@
       "!apps/web/src/api",
       "!apps/api/openapi.json",
       "!packages/db/migrations",
-      "!seed/*.json"
+      "!seed/*.json",
+      "!evals/*.json",
+      "!evals/runs/*.json"
     ]
   },
   "formatter": {
@@ -28,14 +30,22 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
-      "suspicious": { "noConsole": "off" }
+      "suspicious": {
+        "noConsole": "off"
+      }
     }
   },
-  "css": { "parser": { "tailwindDirectives": true } },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "overrides": [
     {
       "includes": ["apps/web/src/components/ui/**"],
-      "linter": { "enabled": false }
+      "linter": {
+        "enabled": false
+      }
     }
   ],
   "javascript": {

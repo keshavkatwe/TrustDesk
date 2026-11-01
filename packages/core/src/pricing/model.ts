@@ -45,6 +45,8 @@ export const PricingRequest = z.strictObject({
     )
     .max(30),
   location: z.string().max(100).nullable(),
+  requestedDate: z.string().max(200).nullable().default(null),
+  notes: z.string().max(1000).nullable().default(null),
   delivery: z.enum(['requested', 'collection', 'unknown']),
   deliveryTrips: z.number().int().min(1).max(100).nullable(),
   discountRequested: z.boolean(),

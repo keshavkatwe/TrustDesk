@@ -9,3 +9,5 @@ dist/
 .DS_Store
 apps/web/src/api/
 .idea
+
+evals/runs/*.partial.json

@@ -71,7 +71,7 @@ export const Settings = z.object({
     promptVersion: z.string(),
     engineVersion: z.string(),
     providerConfigured: z.boolean(),
-    trust: z.literal('supervised'),
+    trust: z.enum(['supervised', 'autonomous']),
     delivery: z.literal('simulated'),
   }),
 });

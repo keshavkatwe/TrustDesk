@@ -10,6 +10,7 @@ import type { GeneratedDraft } from './generate.ts';
 import { type DraftOutput, PROMPT_VERSION, type ProviderInput } from './model.ts';
 import { buildPrompt } from './prompt.ts';
 import type { DraftingFailure } from './result.ts';
+import { agentVersion } from './version.ts';
 
 export type ConversationHistory = Pick<
   typeof messages.$inferSelect,
@@ -51,6 +52,7 @@ export function prepareAttempt(
     model,
     promptVersion: PROMPT_VERSION,
     status: 'running',
+    output: { agent: agentVersion(model) },
     inputHash: createHash('sha256').update(input.system).update(input.user).digest('hex'),
   } satisfies typeof aiRuns.$inferInsert;
   return { ok: true as const, attempt, run };
@@ -62,7 +64,10 @@ export function completionMetadata(generated: GeneratedDraft, fallbackModel: str
     responseId: response?.responseId ?? null,
     model: response?.model ?? fallbackModel,
     usage: response?.usage ?? null,
-    output: response ? { text: response.text.slice(0, 16000) } : null,
+    output: {
+      agent: agentVersion(response?.model ?? fallbackModel),
+      text: response?.text.slice(0, 16000) ?? null,
+    },
     durationMs: Math.max(0, now.getTime() - generated.startedAt),
     finishedAt: now,
   };

@@ -53,10 +53,6 @@
                               "SAR"
                             ]
                           },
-                          "trust": {
-                            "type": "string",
-                            "const": "supervised"
-                          },
                           "autoSend": {
                             "type": "string",
                             "enum": [
@@ -120,7 +116,6 @@
                           "location",
                           "timezone",
                           "currency",
-                          "trust",
                           "autoSend",
                           "approvers",
                           "receivingChannels"
@@ -534,6 +529,22 @@
                                     ],
                                     "maxLength": 100
                                   },
+                                  "requestedDate": {
+                                    "default": null,
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 200
+                                  },
+                                  "notes": {
+                                    "default": null,
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 1000
+                                  },
                                   "delivery": {
                                     "type": "string",
                                     "enum": [
@@ -594,6 +605,8 @@
                                   "language",
                                   "lines",
                                   "location",
+                                  "requestedDate",
+                                  "notes",
                                   "delivery",
                                   "deliveryTrips",
                                   "discountRequested",
@@ -1045,6 +1058,10 @@
                             ],
                             "additionalProperties": false
                           },
+                          "automatic": {
+                            "default": false,
+                            "type": "boolean"
+                          },
                           "decision": {
                             "type": [
                               "object",
@@ -1136,6 +1153,7 @@
                           "recommendedAction",
                           "supersededBy",
                           "outbox",
+                          "automatic",
                           "decision"
                         ],
                         "additionalProperties": false
@@ -1722,6 +1740,22 @@
                               ],
                               "maxLength": 100
                             },
+                            "requestedDate": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            },
+                            "notes": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 1000
+                            },
                             "delivery": {
                               "type": "string",
                               "enum": [
@@ -1782,6 +1816,8 @@
                             "language",
                             "lines",
                             "location",
+                            "requestedDate",
+                            "notes",
                             "delivery",
                             "deliveryTrips",
                             "discountRequested",
@@ -2233,6 +2269,10 @@
                       ],
                       "additionalProperties": false
                     },
+                    "automatic": {
+                      "default": false,
+                      "type": "boolean"
+                    },
                     "decision": {
                       "type": [
                         "object",
@@ -2324,6 +2364,7 @@
                     "recommendedAction",
                     "supersededBy",
                     "outbox",
+                    "automatic",
                     "decision"
                   ],
                   "additionalProperties": false
@@ -3079,16 +3120,14 @@
                       "properties": {
                         "level": {
                           "type": "string",
-                          "const": "supervised"
-                        },
-                        "promotionAvailable": {
-                          "type": "boolean",
-                          "const": false
+                          "enum": [
+                            "supervised",
+                            "autonomous"
+                          ]
                         }
                       },
                       "required": [
-                        "level",
-                        "promotionAvailable"
+                        "level"
                       ],
                       "additionalProperties": false
                     },
@@ -3704,6 +3743,22 @@
                               ],
                               "maxLength": 100
                             },
+                            "requestedDate": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            },
+                            "notes": {
+                              "default": null,
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 1000
+                            },
                             "delivery": {
                               "type": "string",
                               "enum": [
@@ -3764,6 +3819,8 @@
                             "language",
                             "lines",
                             "location",
+                            "requestedDate",
+                            "notes",
                             "delivery",
                             "deliveryTrips",
                             "discountRequested",
@@ -3977,6 +4034,2269 @@
           },
           "404": {
             "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/evaluations": {
+      "get": {
+        "operationId": "getEvaluations",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Stored real evaluations, gate outcomes and version-bound trust",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "currentAgentId": {
+                      "type": "string"
+                    },
+                    "currentContextHash": {
+                      "type": "string"
+                    },
+                    "runs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "schemaVersion": {
+                            "type": "number",
+                            "const": 1
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "enum": [
+                              "qamar",
+                              "rimal"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "variant": {
+                            "type": "string",
+                            "enum": [
+                              "current",
+                              "degraded"
+                            ]
+                          },
+                          "suiteVersion": {
+                            "type": "string"
+                          },
+                          "suiteHash": {
+                            "type": "string"
+                          },
+                          "contextHash": {
+                            "type": "string"
+                          },
+                          "agent": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "model": {
+                                "type": "string"
+                              },
+                              "promptHash": {
+                                "type": "string"
+                              },
+                              "parameters": {},
+                              "schemaHash": {
+                                "type": "string"
+                              },
+                              "engineVersion": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "model",
+                              "promptHash",
+                              "parameters",
+                              "schemaHash",
+                              "engineVersion"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "judge": {
+                            "type": "object",
+                            "properties": {
+                              "model": {
+                                "type": "string"
+                              },
+                              "promptHash": {
+                                "type": "string"
+                              },
+                              "version": {
+                                "type": "string"
+                              },
+                              "parameters": {}
+                            },
+                            "required": [
+                              "model",
+                              "promptHash",
+                              "version"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "baselineId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "accepted": {
+                            "type": "boolean"
+                          },
+                          "baselineReset": {
+                            "default": false,
+                            "type": "boolean"
+                          },
+                          "gate": {
+                            "type": "object",
+                            "properties": {
+                              "passed": {
+                                "type": "boolean"
+                              },
+                              "reasons": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "passedCases": {
+                                "type": "number"
+                              },
+                              "total": {
+                                "type": "number"
+                              },
+                              "passRate": {
+                                "type": "number"
+                              },
+                              "arabicPassed": {
+                                "type": "number"
+                              },
+                              "arabicTotal": {
+                                "type": "number"
+                              },
+                              "hardFailures": {
+                                "type": "number"
+                              },
+                              "regressions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "passed",
+                              "reasons",
+                              "passedCases",
+                              "total",
+                              "passRate",
+                              "arabicPassed",
+                              "arabicTotal",
+                              "hardFailures",
+                              "regressions"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "schemaVersion",
+                          "id",
+                          "tenantId",
+                          "createdAt",
+                          "variant",
+                          "suiteVersion",
+                          "suiteHash",
+                          "contextHash",
+                          "agent",
+                          "judge",
+                          "baselineId",
+                          "accepted",
+                          "baselineReset",
+                          "gate"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "trust": {
+                      "type": "object",
+                      "properties": {
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "supervised",
+                            "autonomous"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "by": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "level",
+                        "reason",
+                        "at",
+                        "by"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "ledger": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "agentId": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "supervised",
+                              "autonomous"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "at": {
+                            "type": "string"
+                          },
+                          "by": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "runId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "agentId",
+                          "level",
+                          "reason",
+                          "at",
+                          "by",
+                          "runId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "currentAgentId",
+                    "currentContextHash",
+                    "runs",
+                    "trust",
+                    "ledger"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/evaluations/{runId}": {
+      "get": {
+        "operationId": "getEvaluationRun",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Inspect saved outputs, code checks, judge rationales and human calibration",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "report": {
+                      "type": "object",
+                      "properties": {
+                        "schemaVersion": {
+                          "type": "number",
+                          "const": 1
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "tenantId": {
+                          "type": "string",
+                          "enum": [
+                            "qamar",
+                            "rimal"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "variant": {
+                          "type": "string",
+                          "enum": [
+                            "current",
+                            "degraded"
+                          ]
+                        },
+                        "suiteVersion": {
+                          "type": "string"
+                        },
+                        "suiteHash": {
+                          "type": "string"
+                        },
+                        "contextHash": {
+                          "type": "string"
+                        },
+                        "agent": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "model": {
+                              "type": "string"
+                            },
+                            "promptHash": {
+                              "type": "string"
+                            },
+                            "parameters": {},
+                            "schemaHash": {
+                              "type": "string"
+                            },
+                            "engineVersion": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "model",
+                            "promptHash",
+                            "parameters",
+                            "schemaHash",
+                            "engineVersion"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "judge": {
+                          "type": "object",
+                          "properties": {
+                            "model": {
+                              "type": "string"
+                            },
+                            "promptHash": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "string"
+                            },
+                            "parameters": {}
+                          },
+                          "required": [
+                            "model",
+                            "promptHash",
+                            "version"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "baselineId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "accepted": {
+                          "type": "boolean"
+                        },
+                        "baselineReset": {
+                          "default": false,
+                          "type": "boolean"
+                        },
+                        "gate": {
+                          "type": "object",
+                          "properties": {
+                            "passed": {
+                              "type": "boolean"
+                            },
+                            "reasons": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "passedCases": {
+                              "type": "number"
+                            },
+                            "total": {
+                              "type": "number"
+                            },
+                            "passRate": {
+                              "type": "number"
+                            },
+                            "arabicPassed": {
+                              "type": "number"
+                            },
+                            "arabicTotal": {
+                              "type": "number"
+                            },
+                            "hardFailures": {
+                              "type": "number"
+                            },
+                            "regressions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "passed",
+                            "reasons",
+                            "passedCases",
+                            "total",
+                            "passRate",
+                            "arabicPassed",
+                            "arabicTotal",
+                            "hardFailures",
+                            "regressions"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "results": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "case": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "tenantId": {
+                                    "type": "string",
+                                    "enum": [
+                                      "qamar",
+                                      "rimal"
+                                    ]
+                                  },
+                                  "category": {
+                                    "type": "string",
+                                    "enum": [
+                                      "normal",
+                                      "missing",
+                                      "rule",
+                                      "out_of_catalogue",
+                                      "injection",
+                                      "cross_tenant"
+                                    ]
+                                  },
+                                  "language": {
+                                    "type": "string",
+                                    "enum": [
+                                      "English",
+                                      "Arabic",
+                                      "Mixed"
+                                    ]
+                                  },
+                                  "messages": {
+                                    "minItems": 1,
+                                    "maxItems": 20,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "expected": {
+                                    "type": "object",
+                                    "properties": {
+                                      "intent": {
+                                        "type": "string",
+                                        "enum": [
+                                          "quote",
+                                          "faq",
+                                          "support",
+                                          "spam"
+                                        ]
+                                      },
+                                      "lines": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "sku": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "quantity": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            },
+                                            "mode": {
+                                              "type": "string",
+                                              "enum": [
+                                                "buy",
+                                                "month",
+                                                "day"
+                                              ]
+                                            },
+                                            "periods": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "sku"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "discountPercent": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "disposition": {
+                                        "type": "string",
+                                        "enum": [
+                                          "needs_approval",
+                                          "hand_off",
+                                          "drop"
+                                        ]
+                                      },
+                                      "reasons": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "missing": {
+                                        "type": "boolean"
+                                      },
+                                      "totalMinor": {
+                                        "type": "integer",
+                                        "minimum": -9007199254740991,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  "guidance": {
+                                    "type": "string",
+                                    "minLength": 1
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "tenantId",
+                                  "category",
+                                  "language",
+                                  "messages",
+                                  "expected",
+                                  "guidance"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "output": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "title": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 120
+                                  },
+                                  "request": {
+                                    "type": "object",
+                                    "properties": {
+                                      "intent": {
+                                        "type": "string",
+                                        "enum": [
+                                          "quote",
+                                          "faq",
+                                          "support",
+                                          "spam"
+                                        ]
+                                      },
+                                      "language": {
+                                        "type": "string",
+                                        "enum": [
+                                          "Arabic",
+                                          "English",
+                                          "Mixed"
+                                        ]
+                                      },
+                                      "lines": {
+                                        "maxItems": 30,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "sku": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "minLength": 1
+                                            },
+                                            "description": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "quantity": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "maxLength": 20,
+                                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "enum": [
+                                                "item",
+                                                "m2"
+                                              ]
+                                            },
+                                            "mode": {
+                                              "type": "string",
+                                              "enum": [
+                                                "buy",
+                                                "month",
+                                                "day"
+                                              ]
+                                            },
+                                            "periods": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "maxLength": 20,
+                                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                            }
+                                          },
+                                          "required": [
+                                            "sku",
+                                            "description",
+                                            "quantity",
+                                            "unit",
+                                            "mode",
+                                            "periods"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "location": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 100
+                                      },
+                                      "requestedDate": {
+                                        "default": null,
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 200
+                                      },
+                                      "notes": {
+                                        "default": null,
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 1000
+                                      },
+                                      "delivery": {
+                                        "type": "string",
+                                        "enum": [
+                                          "requested",
+                                          "collection",
+                                          "unknown"
+                                        ]
+                                      },
+                                      "deliveryTrips": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 1,
+                                        "maximum": 100
+                                      },
+                                      "discountRequested": {
+                                        "type": "boolean"
+                                      },
+                                      "discountPercent": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 20,
+                                        "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                      },
+                                      "budgetMinor": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "availabilityRequested": {
+                                        "type": "boolean"
+                                      },
+                                      "faqIndex": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "missing": {
+                                        "maxItems": 30,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "intent",
+                                      "language",
+                                      "lines",
+                                      "location",
+                                      "requestedDate",
+                                      "notes",
+                                      "delivery",
+                                      "deliveryTrips",
+                                      "discountRequested",
+                                      "discountPercent",
+                                      "budgetMinor",
+                                      "availabilityRequested",
+                                      "faqIndex",
+                                      "missing"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "title",
+                                  "request"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "assessment": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "engineVersion": {
+                                    "type": "string"
+                                  },
+                                  "catalogueVersion": {
+                                    "type": "string"
+                                  },
+                                  "fingerprint": {
+                                    "type": "string"
+                                  },
+                                  "request": {
+                                    "type": "object",
+                                    "properties": {
+                                      "intent": {
+                                        "type": "string",
+                                        "enum": [
+                                          "quote",
+                                          "faq",
+                                          "support",
+                                          "spam"
+                                        ]
+                                      },
+                                      "language": {
+                                        "type": "string",
+                                        "enum": [
+                                          "Arabic",
+                                          "English",
+                                          "Mixed"
+                                        ]
+                                      },
+                                      "lines": {
+                                        "maxItems": 30,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "sku": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "minLength": 1
+                                            },
+                                            "description": {
+                                              "type": "string",
+                                              "minLength": 1,
+                                              "maxLength": 200
+                                            },
+                                            "quantity": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "maxLength": 20,
+                                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                            },
+                                            "unit": {
+                                              "type": "string",
+                                              "enum": [
+                                                "item",
+                                                "m2"
+                                              ]
+                                            },
+                                            "mode": {
+                                              "type": "string",
+                                              "enum": [
+                                                "buy",
+                                                "month",
+                                                "day"
+                                              ]
+                                            },
+                                            "periods": {
+                                              "type": [
+                                                "string",
+                                                "null"
+                                              ],
+                                              "maxLength": 20,
+                                              "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                            }
+                                          },
+                                          "required": [
+                                            "sku",
+                                            "description",
+                                            "quantity",
+                                            "unit",
+                                            "mode",
+                                            "periods"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "location": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 100
+                                      },
+                                      "requestedDate": {
+                                        "default": null,
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 200
+                                      },
+                                      "notes": {
+                                        "default": null,
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 1000
+                                      },
+                                      "delivery": {
+                                        "type": "string",
+                                        "enum": [
+                                          "requested",
+                                          "collection",
+                                          "unknown"
+                                        ]
+                                      },
+                                      "deliveryTrips": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 1,
+                                        "maximum": 100
+                                      },
+                                      "discountRequested": {
+                                        "type": "boolean"
+                                      },
+                                      "discountPercent": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 20,
+                                        "pattern": "^[0-9\\u0660-\\u0669\\u06F0-\\u06F9]+(?:[.\\u066B][0-9\\u0660-\\u0669\\u06F0-\\u06F9]{1,4})?$"
+                                      },
+                                      "budgetMinor": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "availabilityRequested": {
+                                        "type": "boolean"
+                                      },
+                                      "faqIndex": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ],
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "missing": {
+                                        "maxItems": 30,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "intent",
+                                      "language",
+                                      "lines",
+                                      "location",
+                                      "requestedDate",
+                                      "notes",
+                                      "delivery",
+                                      "deliveryTrips",
+                                      "discountRequested",
+                                      "discountPercent",
+                                      "budgetMinor",
+                                      "availabilityRequested",
+                                      "faqIndex",
+                                      "missing"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "disposition": {
+                                    "type": "string",
+                                    "enum": [
+                                      "auto_send",
+                                      "needs_approval",
+                                      "hand_off",
+                                      "drop"
+                                    ]
+                                  },
+                                  "blockApproval": {
+                                    "type": "boolean"
+                                  },
+                                  "quote": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "currency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "AED",
+                                          "SAR"
+                                        ]
+                                      },
+                                      "vatPercent": {
+                                        "type": "number"
+                                      },
+                                      "lines": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "sku": {
+                                              "type": "string"
+                                            },
+                                            "label": {
+                                              "type": "string"
+                                            },
+                                            "unitPriceMinor": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            },
+                                            "quantity": {
+                                              "type": "number",
+                                              "exclusiveMinimum": 0
+                                            },
+                                            "periods": {
+                                              "type": "number",
+                                              "exclusiveMinimum": 0
+                                            },
+                                            "unit": {
+                                              "type": "string"
+                                            },
+                                            "lineTotalMinor": {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 9007199254740991
+                                            }
+                                          },
+                                          "required": [
+                                            "sku",
+                                            "label",
+                                            "unitPriceMinor",
+                                            "quantity",
+                                            "periods",
+                                            "unit",
+                                            "lineTotalMinor"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "subtotalMinor": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "discountMinor": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "vatMinor": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "totalMinor": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "complete": {
+                                        "type": "boolean"
+                                      },
+                                      "note": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "currency",
+                                      "vatPercent",
+                                      "lines",
+                                      "subtotalMinor",
+                                      "discountMinor",
+                                      "vatMinor",
+                                      "totalMinor",
+                                      "complete",
+                                      "note"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "reasons": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "code": {
+                                          "type": "string"
+                                        },
+                                        "title": {
+                                          "type": "string"
+                                        },
+                                        "detail": {
+                                          "type": "string"
+                                        },
+                                        "source": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "code",
+                                        "title",
+                                        "detail",
+                                        "source"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "missing": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "engineVersion",
+                                  "catalogueVersion",
+                                  "fingerprint",
+                                  "request",
+                                  "disposition",
+                                  "blockApproval",
+                                  "quote",
+                                  "reasons",
+                                  "missing"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "reply": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "checks": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "pass": {
+                                      "type": "boolean"
+                                    },
+                                    "hard": {
+                                      "type": "boolean"
+                                    },
+                                    "detail": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "pass",
+                                    "hard",
+                                    "detail"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "judge": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "intent_fidelity": {
+                                    "type": "object",
+                                    "properties": {
+                                      "grade": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pass",
+                                          "fail",
+                                          "not_assessable"
+                                        ]
+                                      },
+                                      "rationale": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 1200
+                                      }
+                                    },
+                                    "required": [
+                                      "grade",
+                                      "rationale"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "language": {
+                                    "type": "object",
+                                    "properties": {
+                                      "grade": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pass",
+                                          "fail",
+                                          "not_assessable"
+                                        ]
+                                      },
+                                      "rationale": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 1200
+                                      }
+                                    },
+                                    "required": [
+                                      "grade",
+                                      "rationale"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "helpfulness": {
+                                    "type": "object",
+                                    "properties": {
+                                      "grade": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pass",
+                                          "fail",
+                                          "not_assessable"
+                                        ]
+                                      },
+                                      "rationale": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 1200
+                                      }
+                                    },
+                                    "required": [
+                                      "grade",
+                                      "rationale"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "intent_fidelity",
+                                  "language",
+                                  "helpfulness"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "error": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "generation": {
+                                "type": "object",
+                                "properties": {
+                                  "responseId": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "model": {
+                                    "type": "string"
+                                  },
+                                  "durationMs": {
+                                    "type": "number"
+                                  },
+                                  "usage": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "inputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "cachedInputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "outputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "estimatedCostUsd": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "inputTokens",
+                                      "cachedInputTokens",
+                                      "outputTokens",
+                                      "estimatedCostUsd"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "responseId",
+                                  "model",
+                                  "durationMs",
+                                  "usage"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "judging": {
+                                "type": "object",
+                                "properties": {
+                                  "responseId": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
+                                  "model": {
+                                    "type": "string"
+                                  },
+                                  "durationMs": {
+                                    "type": "number"
+                                  },
+                                  "usage": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "inputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "cachedInputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "outputTokens": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 9007199254740991
+                                      },
+                                      "estimatedCostUsd": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "inputTokens",
+                                      "cachedInputTokens",
+                                      "outputTokens",
+                                      "estimatedCostUsd"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "error": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "responseId",
+                                  "model",
+                                  "durationMs",
+                                  "usage",
+                                  "error"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "case",
+                              "output",
+                              "assessment",
+                              "reply",
+                              "checks",
+                              "judge",
+                              "error",
+                              "generation",
+                              "judging"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "schemaVersion",
+                        "id",
+                        "tenantId",
+                        "createdAt",
+                        "variant",
+                        "suiteVersion",
+                        "suiteHash",
+                        "contextHash",
+                        "agent",
+                        "judge",
+                        "baselineId",
+                        "accepted",
+                        "baselineReset",
+                        "gate",
+                        "results"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "labels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "caseId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "approverId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "dimensions": {
+                            "type": "object",
+                            "properties": {
+                              "intent_fidelity": {
+                                "type": "string",
+                                "enum": [
+                                  "pass",
+                                  "fail",
+                                  "not_assessable"
+                                ]
+                              },
+                              "language": {
+                                "type": "string",
+                                "enum": [
+                                  "pass",
+                                  "fail",
+                                  "not_assessable"
+                                ]
+                              },
+                              "helpfulness": {
+                                "type": "string",
+                                "enum": [
+                                  "pass",
+                                  "fail",
+                                  "not_assessable"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "intent_fidelity",
+                              "language",
+                              "helpfulness"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "rationale": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "approverName": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "caseId",
+                          "approverId",
+                          "dimensions",
+                          "rationale",
+                          "approverName",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "calibration": {
+                      "type": "object",
+                      "properties": {
+                        "labels": {
+                          "type": "number"
+                        },
+                        "comparisons": {
+                          "type": "number"
+                        },
+                        "agreements": {
+                          "type": "number"
+                        },
+                        "disagreements": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ready": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "labels",
+                        "comparisons",
+                        "agreements",
+                        "disagreements",
+                        "ready"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "report",
+                    "labels",
+                    "calibration"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/evaluations/{runId}/labels": {
+      "post": {
+        "operationId": "labelEvaluation",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Save one immutable named human evaluation label",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          },
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "caseId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "dimensions": {
+                    "type": "object",
+                    "properties": {
+                      "intent_fidelity": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "language": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "helpfulness": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "intent_fidelity",
+                      "language",
+                      "helpfulness"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "caseId",
+                  "approverId",
+                  "dimensions",
+                  "rationale"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "caseId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "dimensions": {
+                    "type": "object",
+                    "properties": {
+                      "intent_fidelity": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "language": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "helpfulness": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "intent_fidelity",
+                      "language",
+                      "helpfulness"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "caseId",
+                  "approverId",
+                  "dimensions",
+                  "rationale"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "caseId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "dimensions": {
+                    "type": "object",
+                    "properties": {
+                      "intent_fidelity": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "language": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      },
+                      "helpfulness": {
+                        "type": "string",
+                        "enum": [
+                          "pass",
+                          "fail",
+                          "not_assessable"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "intent_fidelity",
+                      "language",
+                      "helpfulness"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "caseId",
+                  "approverId",
+                  "dimensions",
+                  "rationale"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Response for status 422",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Response for status 503",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/trust/promotions": {
+      "post": {
+        "operationId": "promoteTrust",
+        "tags": [
+          "quality"
+        ],
+        "summary": "Named promotion guarded by passing current evidence and genuine human calibration",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "qamar",
+                "rimal"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "runId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "reason",
+                  "runId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "runId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "reason",
+                  "runId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approverId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "runId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "approverId",
+                  "reason",
+                  "runId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response for status 200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Response for status 404",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Response for status 409",
             "content": {
               "application/json": {
                 "schema": {
@@ -4545,7 +6865,10 @@
                         },
                         "trust": {
                           "type": "string",
-                          "const": "supervised"
+                          "enum": [
+                            "supervised",
+                            "autonomous"
+                          ]
                         },
                         "delivery": {
                           "type": "string",

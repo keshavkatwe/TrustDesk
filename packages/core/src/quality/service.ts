@@ -1,6 +1,7 @@
 import { type Database, withTenant } from '@trustdesk/db';
 import { DEFAULT_MODEL, PROMPT_VERSION } from '../ai/model.ts';
 import { DraftEvidence } from '../inbox/model.ts';
+import { loadPricingContext } from '../pricing/context.ts';
 import { ENGINE_VERSION } from '../pricing/evaluate.ts';
 import { QUALITY_ATTEMPT_LIMIT, QualityAttemptDetail, QualityOverview } from './model.ts';
 import { readAttempts, toAttempt } from './queries.ts';
@@ -16,16 +17,8 @@ export function createQualityService(
     async overview(tenantId: string): Promise<QualityOverview | undefined> {
       if (!allowed.has(tenantId)) return undefined;
       return withTenant(database, tenantId, async (tx) => {
-        const tenant = await tx.query.tenants.findFirst({
-          columns: { autoSend: true },
-          where: (tenant, { eq }) => eq(tenant.id, tenantId),
-        });
-        if (!tenant) return undefined;
-        const catalogue = await tx.query.catalogueVersions.findFirst({
-          columns: { version: true },
-          where: (catalogue, { eq }) => eq(catalogue.tenantId, tenantId),
-          orderBy: (catalogue, { desc }) => [desc(catalogue.createdAt), desc(catalogue.version)],
-        });
+        const pricing = await loadPricingContext(tx, tenantId, undefined, model);
+        const { tenant, catalogue } = pricing;
         const attempts = (await readAttempts(tx, tenantId)).map(toAttempt);
         return QualityOverview.parse({
           tenantId,
@@ -39,7 +32,7 @@ export function createQualityService(
             autoSend: tenant.autoSend,
           },
           // Operational reviews are not calibrated evaluation labels or a promotion decision.
-          trust: { level: 'supervised', promotionAvailable: false },
+          trust: { level: pricing.trust },
           summary: summarizeAttempts(attempts),
           attempts,
         });

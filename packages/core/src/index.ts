@@ -2,6 +2,7 @@ export { type ActivityService, createActivityService } from './activity/service.
 export { createOpenAIProvider } from './ai/openai.ts';
 export { createDraftingService, type DraftingService } from './ai/service.ts';
 export { createDispatchService } from './dispatch/service.ts';
+export { createEvaluationService, type EvaluationService } from './evaluation/service.ts';
 export { createInboxService, type InboxService } from './inbox/service.ts';
 export { createQualityService, type QualityService } from './quality/service.ts';
 export { draftPublisher, queueClient } from './queue/client.ts';

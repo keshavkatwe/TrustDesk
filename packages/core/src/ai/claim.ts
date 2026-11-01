@@ -25,7 +25,7 @@ export async function claimAttempt(
     return failure('conflict', 'An AI draft is already being generated for this message.');
   if (active) await expireRunningAttempts(tx, tenantId, target.message.id);
 
-  const pricing = await loadPricingContext(tx, tenantId);
+  const pricing = await loadPricingContext(tx, tenantId, undefined, model);
   const history = await loadConversationHistory(tx, tenantId, target.conversation.id);
   const prepared = prepareAttempt(target, pricing, history, model, randomUUID());
   if (!prepared.ok) return prepared;

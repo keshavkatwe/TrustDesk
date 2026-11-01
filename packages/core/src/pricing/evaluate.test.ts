@@ -60,6 +60,8 @@ function context(id = 'qamar'): PricingContext {
   };
 }
 const base: PricingRequest = {
+  requestedDate: null,
+  notes: null,
   intent: 'quote',
   language: 'English',
   lines: [
@@ -489,4 +491,46 @@ test('missing mandatory fee rows or rates block approval without inventing a cha
       expect(result.quote?.lines.some((line) => line.sku === scenario.feeSku)).toBe(false);
     }
   }
+});
+
+test('Arabic missing details become distinct date, duration and trip questions', () => {
+  const assessment = evaluateRequest(context('rimal'), {
+    ...base,
+    language: 'Arabic',
+    location: 'Riyadh',
+    delivery: 'requested',
+    lines: [
+      {
+        sku: 'R-CHR-001',
+        description: 'White chairs',
+        quantity: '300',
+        unit: 'item',
+        mode: 'day',
+        periods: null,
+      },
+    ],
+    missing: ['What is the event date?', 'How many rental days are needed?'],
+  });
+  const reply = renderReply(assessment, []);
+  expect(reply).toContain('تاريخ الفعالية');
+  expect(reply).toContain('مدة الإيجار');
+  expect(reply).toContain('عدد رحلات التوصيل والاستلام');
+  expect(reply).not.toContain('التفاصيل غير المحددة');
+  expect(reply.split('مدة الإيجار')).toHaveLength(2);
+});
+
+test('a requested date disqualifies an otherwise trusted FAQ from automatic sending', () => {
+  const pricing = { ...context(), trust: 'autonomous' as const };
+  const request = {
+    ...base,
+    intent: 'faq',
+    lines: [],
+    faqIndex: 0,
+    location: null,
+    requestedDate: 'tomorrow',
+  };
+  expect(evaluateRequest(pricing, request).disposition).toBe('needs_approval');
+  expect(evaluateRequest(pricing, { ...request, requestedDate: null }).disposition).toBe(
+    'auto_send',
+  );
 });

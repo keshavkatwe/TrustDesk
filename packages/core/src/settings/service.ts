@@ -8,6 +8,7 @@ import {
 } from '@trustdesk/db';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODEL, PROMPT_VERSION } from '../ai/model.ts';
+import { loadPricingContext } from '../pricing/context.ts';
 import { ENGINE_VERSION } from '../pricing/evaluate.ts';
 import { type Failure, failure } from '../result.ts';
 import { Settings, UpdateSettings } from './model.ts';
@@ -43,6 +44,7 @@ export function createSettingsService(
         });
         if (!tenant) return undefined;
         const commercial = CommercialRules.parse(tenant.commercialRules);
+        const pricing = await loadPricingContext(tx, tenantId, undefined, model);
         return Settings.parse({
           tenantId,
           version: settingsVersion(tenant),
@@ -62,7 +64,7 @@ export function createSettingsService(
             promptVersion: PROMPT_VERSION,
             engineVersion: ENGINE_VERSION,
             providerConfigured,
-            trust: 'supervised',
+            trust: pricing.trust,
             delivery: 'simulated',
           },
         });

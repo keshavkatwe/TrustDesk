@@ -1,0 +1,15 @@
+# Evaluation evidence
+
+`goldset.json` is a versioned set of 32 synthetic enquiries: 16 per business, six categories, with 16 Arabic/mixed/Arabizi cases. `runs/` contains genuine OpenAI extraction and judge responses, source-derived assessments, expected-property checks, usage, timing and gate results. Files ending `.partial.json` are ignored crash-recovery artifacts, not completed runs.
+
+The first run found Arabizi classified as Mixed, missing date retention, repetitive Arabic questions and judge rationales that contradicted actual fields or integer-minor-unit totals. The implementation added date/context extraction, clearer language/duration/collection instructions and deduplicated Arabic clarification labels. The judge was revised to assess extraction plus code-added missing details, understand minor units and distinguish a requested date from a confirmed promise. Tent quantities in two cases were made explicit rather than leaving ambiguous singular wording. These changes are versioned; earlier failures remain visible.
+
+A repeat current-version run also exposed ordinary extraction mistakes. Those outputs are retained and blocked, rather than discarded or relabelled. A passing run is limited evidence, not a guarantee of repeatability. Promotion requires independent human calibration and the latest passing current evidence. Any later failing run for that version revokes its promotion.
+
+The deliberately degraded prompt forces English and weakens product/correction handling. Its outputs still come from the real provider; code retains money/sending authority. `bun run eval:verify` recomputes its comparison with the referenced accepted baseline, requiring blocked results. It makes no model call and does not claim fresh inference.
+
+`bun run eval:gate` makes fresh paid calls, stores real evidence and exits nonzero on a blocked candidate. `--accept` cannot bypass failures. `--degraded` cannot be accepted. Source rules/case/judge changes require an explicitly reviewed `--accept --new-baseline`; the old baseline remains linked. The local estimate ceiling is not a production reservation ledger; unpriced failures and calls already in flight are disclosed.
+
+Human reviews are entered in Quality & Trust, independently before viewing judge grades. They are not model-generated or copied from operational approvals. `bun run eval:export` writes `human-evidence.json` only from actual saved labels and trust events, and refuses an empty label set. Five labelled outputs per tenant are the minimum, ten overall. Demo reviewer identities represent the local person operating the selector; they are not authenticated proof of the fictional seed person's identity. A missing human-evidence file means calibration has not yet been exported. Seed imports measured runs and any genuine exported labels without needing a model key.
+
+Generator and judge currently use the same pinned model family, creating correlated-error risk. Hard invariants remain code checks and a bilingual human must challenge judge agreement. There is no statistical reliability claim from 32 curated cases or ten human labels.

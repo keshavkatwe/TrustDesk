@@ -192,11 +192,19 @@ async function readDeliveryActivity(
     entries.push(
       entry('delivery', `intent:${row.id}`, row.createdAt, {
         title: 'Simulated delivery queued',
-        description: 'Approved reply entered the local outbox.',
-        actor: 'Review service',
+        description:
+          row.action === 'auto_send'
+            ? 'Trusted low-risk FAQ entered the local outbox.'
+            : 'Approved reply entered the local outbox.',
+        actor:
+          row.action === 'auto_send' ? 'Code policy / named trust promotion' : 'Review service',
         outcome: 'pending',
         reference: row.id,
-        details: details({ 'Outbox ID': row.id, 'Review ID': row.reviewId }),
+        details: details({
+          'Outbox ID': row.id,
+          'Review ID': row.reviewId ?? 'Automatic FAQ',
+          'Trust event': row.trustEventId ?? 'Not applicable',
+        }),
       }),
     );
   const delivered = await tx.query.deliveries.findMany({

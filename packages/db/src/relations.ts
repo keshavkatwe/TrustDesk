@@ -65,6 +65,7 @@ export const draftRelations = relations(drafts, ({ one, many }) => ({
     references: [messages.tenantId, messages.id],
   }),
   review: one(reviews),
+  automaticOutbox: one(outbox),
   sourceRuns: many(aiRuns, { relationName: 'sourceDraft' }),
   resultRuns: many(aiRuns, { relationName: 'resultDraft' }),
 }));
@@ -82,6 +83,10 @@ export const reviewRelations = relations(reviews, ({ one }) => ({
 }));
 
 export const outboxRelations = relations(outbox, ({ one }) => ({
+  automaticDraft: one(drafts, {
+    fields: [outbox.tenantId, outbox.draftId],
+    references: [drafts.tenantId, drafts.id],
+  }),
   review: one(reviews, {
     fields: [outbox.tenantId, outbox.reviewId, outbox.action],
     references: [reviews.tenantId, reviews.id, reviews.action],

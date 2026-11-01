@@ -1,67 +1,41 @@
 # AI usage log
 
-## Tools and scope
+## Tools and shaping instructions
 
-Codex assisted with repository setup, implementation, test design, debugging and documentation. Official framework documentation and the project's Elysia, Postgres, Turborepo and shadcn skills informed the work. Browser automation checked the local UI.
+Codex assisted with implementation, source review, test design, debugging and documentation. Official Elysia, Drizzle, pg-boss, OpenAI and shadcn documentation and the project-local skills informed the work. Browser automation verified the local UI. The application itself uses OpenAI for structured request extraction and, separately, evaluation judging.
 
-The application now supports explicit OpenAI request extraction through the Responses API. Code calculates prices/policy and assembles controlled replies; initial sample drafts remain clearly identified.
-
-## Instructions that shaped the implementation
-
-| Instruction | Result |
+| Instruction | Implementation |
 | --- | --- |
-| Use Vite and Turborepo, with the database separate and shared backend logic in core. | Separate web, API and worker apps; database access in `packages/db`; review and pricing services in `packages/core`. |
-| Use OpenAPI and Hey API, following the existing Pushwing pattern. | Elysia contracts export a tracked specification; Hey API generates the web SDK and TanStack Query helpers. |
-| Use Zod instead of TypeBox for application schemas. | Request/response contracts, configuration and structured pricing inputs use Zod with inferred types. |
-| Follow Elysia's feature-module guidance. | Thin feature controllers map core outcomes to HTTP responses; business services do not depend on Elysia context. |
-| Use stock shadcn components and the selected preset. | Preserved component geometry and the Mist/Teal/Inter preset; composed the inbox and review screens from existing primitives. |
-| Use Drizzle query APIs throughout application reads. | Defined composite tenant relations and converted services, recovery and seed reads to `findMany/findFirst`, using `with` for related data; retained row locks/predicate subqueries and verified exact top-level bigint reads. |
-| Simplify the complete backend for readability, researching established patterns first. | Kept Elysia feature controllers and plain core services; separated orchestration from queries/rules, shared error/locking behavior and replaced worker shutdown polling with an awaited promise. No new dependency was needed. |
-| Separate pure business decisions from database work across receive and completed drafting, and reduce repeated queries. | Added pure record/decision preparation, consolidated related reads, reused locked pricing data, reserved sequences atomically and replaced per-draft supersession writes with one update. |
+| Use Vite/Turborepo, a separate database package and shared core services. | Web, API and worker applications share plain backend services; business logic has no HTTP or React dependency. |
+| Use Elysia feature modules, Zod, OpenAPI and Hey API. | Thin controllers export validated contracts; the web uses generated SDK/query helpers. |
+| Keep stock shadcn with the selected preset. | Existing component geometry and Mist/Teal/Inter theme are preserved; RTL and semantic states are functional additions. |
+| Prefer Drizzle relations and readable, pure business decisions. | Scoped relational reads, explicit transaction/lock boundaries, pure pricing/evaluation rules and named persistence steps; SQL remains for locks, mutations and projections. |
+| Build submission value around the complete decision/proof trail. | Receive → draft → code decision → review/outbox → real evaluations, calibrated-human review UI and version-bound trust; channel delivery remains simulated. |
 
-## AI errors and corrections
+## Actual errors and corrections
 
-| Error | How it was detected | Correction |
-| --- | --- | --- |
-| Initially proposed Eden instead of the required OpenAPI/Hey API contract. | Comparing the proposal with the requested reference structure. | Used exported OpenAPI and generated SDK/query helpers. |
-| Used a JavaScript bigint literal as a Drizzle column default. | Drizzle Kit reported a serialization error even though the command exited successfully. | Used a SQL literal default; inspected generated SQL and verified the real migration in Postgres. |
-| A tenant-reference test initially used a draft ID where a message ID was needed. | Reviewing whether the test actually exercised a cross-business reference. | Created a real message in the other business and checked that the composite foreign key rejected the reference. |
-| Initially displayed a draft’s model/usage from its latest generation attempt. | Reviewing failed regeneration showed it could misattribute an existing draft to a failed later call. | Separated originating-run provenance from latest-attempt status and added a Postgres regression test. |
-| The review confirmation still said “not sent” after simulated dispatch completed. | Live browser verification exposed disagreement between the label and persisted delivery outcome. | Derived status and confirmation text from the saved delivery result. |
-| Classified OpenAI timeouts by `error.name`, but SDK subclasses inherit `Error`. | Restricted-role regression tests reproduced timeout and connection failures being saved as generic provider errors. | Check SDK error classes and HTTP statuses; show actionable saved failure messages and preserve explicit retry without overwriting drafts. |
-| Test enquiry regenerated the customer identifier whenever its dialog opened, splitting follow-ups into separate conversations. | Comparing saved customer identities with form state lifecycle. | Retain channel/customer in the parent widget while issuing a fresh message ID per opening; browser reopen checks and a four-message/one-conversation Postgres regression pass. |
-| A mechanical pricing refactor altered the missing-delivery-rate reason text. | Reviewing the extracted calculation against the original. | Restored the text, added missing mandatory fee/rate cases and compared full assessments, reason order and fingerprints against the original evaluator. |
-| The initial query-count fixture omitted the required draft status. | PostgreSQL rejected the synthetic insert. | Supplied the explicit pending status before collecting baseline counts; application schema and constraints were retained. |
+| Error | Detection and correction |
+| --- | --- |
+| Initially proposed Eden instead of the requested OpenAPI/Hey API contract. | Compared with the requested structure and used exported OpenAPI/generated clients. |
+| A Drizzle bigint column default did not serialize into a valid migration. | Inspected generator output, replaced it with a SQL literal and verified migrations in real Postgres. |
+| Failed regeneration could misattribute an old draft to the latest attempt's model/usage. | Added separate originating-run provenance and a Postgres regression. |
+| Real evaluation runs found Arabizi classification, dropped dates, incorrect pickup/duration extraction and repetitive Arabic questions. | Preserved failed reports; improved extraction instructions/reasoning, date/context fields and distinct Arabic clarification labels. No threshold was lowered to accept these outputs. |
+| The judge sometimes contradicted minor-unit totals or ignored code-added missing questions. | Revised its rubric and supplied one consolidated final draft, with stronger reasoning. Real outputs, rationales and earlier failures remain stored; independent calibration is still required. |
+| JSONB reordered nested parameter keys, creating a false configuration mismatch. | Added value-based canonical comparison and a regression covering reordered keys versus genuinely changed reasoning parameters. |
+| The human-label response parser rejected internal tenant/run columns. | Real concurrent-label tests exposed the projection error; corrected the response boundary and verified label races/promotion guards. |
 
-## Verification evidence
+## Executed evidence
 
-The following checks were executed through Codex; they are not independent human sign-off:
+- `bun run check`: lint, workspace/root types, 49 unit/HTTP tests and application builds passed.
+- `bun run db:test`: 75 real Postgres tests passed under separate restricted app/migration roles. They cover forced RLS, omitted/wrong filters, composite references, duplicate intake, correction ordering, competing reviews, atomic rollback, attempt recovery, source precision and settings locks.
+- Evaluation-specific database checks cover immutable human labels, one winner under concurrent labelling, guarded named promotion, automatic supervision, one automatic FAQ intent/result, and cancellation when trust is revoked before dispatch. A private canary stays out of another business's prompt, saved attempt and UI payload; a deliberately mixed context fails before inference.
+- Final real baselines passed 32/32 cases, including 16/16 Arabic/mixed/Arabizi cases. The matching deliberately degraded runs passed only Qamar 5/16 and Rimal 6/16, with zero Arabic passes, and were blocked. `bun run eval:verify` recomputes those stored gates without a key.
+- Twenty saved measured reports retain successes and failures. Their known estimated provider cost totals USD 1.433768400; estimates are not billing receipts. Mock inference is used only in automated tests, never as measured-run or human evidence.
+- Key-free evidence import was run twice against the isolated test database and showed current 16/16 baselines for both tenants. Temporary imports were removed afterward; development conversations were preserved.
+- Browser verification checked current-version badges, independent human-review fields, judge masking, Arabic/currency presentation and overflow. Workflow approvals and test fixtures were not counted as independent human labels.
 
-- `bun run check`: formatting/lint, workspace and root TypeScript checks, 40 unit/HTTP tests and application builds passed.
-- `bun run db:test`: 70 real Postgres tests passed using separate application and migration roles. Coverage includes forced tenant RLS, nested relational visibility/default-deny, colliding IDs across tenants, cross-business references, duplicate-message constraints, four different messages sharing one conversation, pooled tenant context, competing reviews, stale drafts, current-rule rechecks and atomic review/outbox rollback. Additional checks preserve source bigint values above JavaScript's safe range and filter recorded deliveries before the 25-item recovery limit. Drafting checks include one active call across pools, invalid/refused/truncated output, foreign SKUs, interrupted-run recovery, review-during-inference, preserved draft provenance after failure, version ordering and eight provider-error/retry cases without private exception text. New checks confirm late expired responses retain usage without replacing drafts, pricing changes during inference reject output, and recovery preserves active attempts and other businesses without requeuing work.
-- Pricing tests cover exact rounding, source rates, discount thresholds, stage-deck conversion, mandatory crew, delivery basis, minimum orders, budgets and automatic-send eligibility.
-- Browser checks exercised Arabic replies, business switching, mobile layout, computed quote evidence and rejection of an altered total. API-process restart verification confirmed persisted review/edit/outbox data. New drafting controls were checked at 390px and desktop width, including unsaved-edit protection.
-- Two genuine OpenAI calls produced held drafts: five iPhones at AED 17,844.75 including VAT, and the corrected 30-laptop/three-month request at AED 17,010 excluding unresolved delivery. The latter retained prior conversation details and applied no invented discount. Model, prompt, usage and estimated cost were saved; these are smoke checks, not a measured quality baseline.
-- Real Postgres/pg-boss checks cover atomic receipt/message/job rollback, concurrent duplicate deliveries, saved conflict receipts for changed content/sender, forged tenant metadata, correction supersession, configuration changes before dispatch, unique simulated sends and missing-provider failures. These checks also passed after simplifying receive, worker, drafting and dispatch flows with shared lock/run helpers and explicit transaction boundaries. Automated workflow tests inject a fake model and make no paid calls.
-- A live browser run submitted a new two-iPhone enquiry, observed automatic worker drafting, approved it under the simulated named identity and verified `Sent · simulated` with a persisted simulation ID. The same result/ID survived a full process restart; the incoming form fit a 390px viewport without horizontal overflow, and a fresh browser load reported no new warnings/errors. This Codex-operated demo is not independent human evaluation/calibration.
-- The local key is ignored by Git and was not found in the generated web build. Provider exception text is not persisted; only categorized failures and available usage are recorded.
-- A failed Rimal test enquiry succeeded on one explicit live retry and was verified in the inbox. It requested clarification rather than substituting a catalogue chair type. Earlier generic error records cannot establish the exact historical provider failure.
+These are Codex-executed checks, not independent human technical sign-off. Human labels must be supplied through actual reviews and exported from saved data; their completion is not fabricated. The Loom guide is a recording plan, not a recorded video.
 
-- Quality & Trust checks cover tenant isolation with colliding attempt IDs, allowed-business scope, the latest-50 bound, saved versus active version provenance, and failed regeneration without inherited output/review. Cost tests preserve tiny estimates and distinguish unknown from zero. HTTP checks validate contracts and redact database errors. Browser checks verified filters, attempt inspection, business-specific empty states, preserved navigation on business switch and a 390px layout without page overflow. This read-only screen records no new model usage and cannot promote trust.
+## Delegation limits
 
-- Activity/Settings verification covers category filtering before the recent-100 limit, colliding source IDs across businesses, sample/simulation provenance, named rule-change snapshots, stale editor races, exact decimal conversion, no-op saves, append-only history, audit-failure rollback and configuration locks shared with pricing. Browser checks verified activity search/details, business switching, unchanged settings submission, Rimal auto-send-off and 390px layouts. Changed saves were exercised against the isolated test database; local demo rule values were preserved.
-- Some reruns encountered worker/drafting timing timeouts. The affected suites passed separately and together, followed by a complete 67-test database pass. The cause was not established; timing limits and behavioral assertions remain intact. The concurrency test now reports an early claim failure instead of waiting indefinitely for provider entry.
-
-- Backend readability verification retained all 67 Postgres passes. A temporary comparison against the original evaluator matched 10,200 varied inputs plus 47 evaluations from pricing tests, including fingerprints and rejected contexts. Generated OpenAPI remained unchanged. The added regression covers missing mandatory fee rows/rates without invented charges.
-
-- Receive/drafting driver-call measurements, including transaction boundaries/RLS/locks/queue insertion: intake 19→16, duplicate 11→10, claim 18→14, completion 17→15 and correction of 11 pending versions 30→16. Regression budgets cover the same fixture; worker polling/preflight is excluded. Additional Postgres checks verify concurrent follow-up sequences, sequence rollback after queue failure and oversized history rejection before a provider call or attempt insert. No live model call or development-data reset was used.
-
-Combined result: 110 tests passed. These engineering tests are distinct from the challenge's planned evaluation gold set.
-
-Trust was placed in generated code only after source inspection and relevant checks. SQL generation required inspection and database execution; process exit status alone was insufficient. Browser rendering and interaction checks supplemented TypeScript/build checks. Independent human technical verification and human-labelled judge calibration have not been recorded.
-
-## Boundaries retained
-
-AI does not authorize prices, discounts, availability, delivery commitments, sending or trust promotion. Deterministic code owns money and policy; named reviewers authorize held replies. Production credentials, destructive production operations and final release decisions require accountable human ownership.
-
-No synthetic label is presented as human calibration, no sample draft is presented as a model run, and no pending outbox record is presented as delivered, and simulator results are clearly labelled. Local receipt/queue processing and simulated dispatch are implemented. Production adapter authentication, real channel delivery/reconciliation, general model-written wording and measured evaluation/trust evidence remain unfinished.
+AI does not authorize commercial commitments or its own promotion. Code owns source money/policy; named humans own held replies, independent labels and promotion. Production authentication, real delivery/reconciliation, deployment/release decisions and independent bilingual judgement remain accountable human work. A passing curated run does not establish statistical reliability, and same-family generator/judge errors can correlate.

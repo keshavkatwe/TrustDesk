@@ -3,6 +3,7 @@ import { openapi } from '@elysiajs/openapi';
 import type {
   ActivityService,
   DraftingService,
+  EvaluationService,
   InboxService,
   QualityService,
   ReceiveService,
@@ -14,6 +15,7 @@ import { createActivityModule } from './modules/activity/index.ts';
 import { createDraftingModule } from './modules/drafting/index.ts';
 import { health } from './modules/health/index.ts';
 import { createInboxModule } from './modules/inbox/index.ts';
+import { createEvaluationModule } from './modules/quality/evaluation.ts';
 import { createQualityModule } from './modules/quality/index.ts';
 import { createReceiveModule } from './modules/receive/index.ts';
 import { createSettingsModule } from './modules/settings/index.ts';
@@ -25,6 +27,7 @@ export function createApp(
     drafting?: DraftingService;
     receive?: ReceiveService;
     quality?: QualityService;
+    evaluation?: EvaluationService;
     activity?: ActivityService;
     settings?: SettingsService;
   } = {},
@@ -44,6 +47,7 @@ export function createApp(
     .use(createDraftingModule(services.drafting))
     .use(createReceiveModule(services.receive))
     .use(createQualityModule(services.quality))
+    .use(createEvaluationModule(services.evaluation))
     .use(createActivityModule(services.activity))
     .use(createSettingsModule(services.settings))
     .use(health);

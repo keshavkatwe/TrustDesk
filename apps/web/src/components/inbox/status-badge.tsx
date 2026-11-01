@@ -15,13 +15,17 @@ export function StatusBadge({
   status,
   processingState,
   outboxStatus,
+  automatic,
 }: {
   status: InboxItem['status'];
+  automatic?: boolean;
   processingState?: InboxItem['processingState'];
   outboxStatus?: NonNullable<InboxItem['outbox']>['status'];
 }) {
   if (status === 'approved' && outboxStatus === 'simulated_sent')
-    return <Badge variant="success">Sent · simulated</Badge>;
+    return <Badge variant="success">Sent · simulated{automatic ? ' · automatic' : ''}</Badge>;
+  if (automatic && status === 'approved' && outboxStatus === 'pending')
+    return <Badge variant="info">Queued · automatic FAQ</Badge>;
   if (status === 'approved' && outboxStatus === 'cancelled')
     return <Badge variant="destructive">Send cancelled</Badge>;
   if (

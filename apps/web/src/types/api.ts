@@ -17,3 +17,5 @@ export type QualityAttemptDetail = GetQualityAttemptResponse;
 export type ActivityEntry = GetActivityResponse['entries'][number];
 export type ActivityCategory = ActivityEntry['category'];
 export type Settings = GetSettingsResponse;
+export type EvaluationOverview = import('@/api/types.gen').GetEvaluationsResponse;
+export type EvaluationRun = import('@/api/types.gen').GetEvaluationRunResponse;

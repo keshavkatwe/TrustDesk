@@ -12,7 +12,6 @@ export const Tenant = z.object({
   location: z.string(),
   timezone: z.string(),
   currency: z.enum(['AED', 'SAR']),
-  trust: z.literal('supervised'),
   autoSend: z.enum(['low_risk_only', 'off']),
   approvers: z.array(z.object({ id: z.string(), name: z.string(), role: z.string() })),
   receivingChannels: z
@@ -65,6 +64,7 @@ export const InboxItem = z.object({
       simulatedMessageId: z.string().nullable().default(null),
     })
     .nullable(),
+  automatic: z.boolean().default(false),
   decision: z
     .object({
       action: ReviewAction,

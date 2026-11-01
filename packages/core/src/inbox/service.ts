@@ -1,4 +1,5 @@
 import { type Database, withTenant } from '@trustdesk/db';
+import { DEFAULT_MODEL } from '../ai/model.ts';
 import { failure } from '../result.ts';
 import { Inbox, ReviewInput, Workspace } from './model.ts';
 import { readBusiness, readItems } from './queries.ts';
@@ -7,7 +8,11 @@ import { type ReviewResult, reviewDraft } from './review.ts';
 export type { ReviewResult } from './review.ts';
 
 // The caller supplies the local operator's allowed businesses. This is not production authentication.
-export function createInboxService(database: Database, allowedTenantIds: readonly string[]) {
+export function createInboxService(
+  database: Database,
+  allowedTenantIds: readonly string[],
+  model = DEFAULT_MODEL,
+) {
   const allowed = new Set(allowedTenantIds);
   return {
     async workspace() {
@@ -36,7 +41,7 @@ export function createInboxService(database: Database, allowedTenantIds: readonl
       const input = parsed.data;
       if (input.action !== 'approve' && !input.reason)
         return failure('reason_required', 'Add a reason for rejecting or handing off this draft.');
-      return withTenant(database, tenantId, (tx) => reviewDraft(tx, tenantId, id, input));
+      return withTenant(database, tenantId, (tx) => reviewDraft(tx, tenantId, id, input, model));
     },
   };
 }

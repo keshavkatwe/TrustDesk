@@ -101,6 +101,7 @@ export function decideDisposition(state: Evaluation): Assessment['disposition'] 
     request.faqIndex !== null &&
     tenant.faq[request.faqIndex] !== undefined &&
     request.lines.length === 0 &&
+    request.requestedDate === null &&
     !request.availabilityRequested &&
     !request.discountRequested &&
     request.discountPercent === null &&

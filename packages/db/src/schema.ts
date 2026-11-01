@@ -287,7 +287,9 @@ export const outbox = pgTable(
   {
     tenantId: text('tenant_id').notNull(),
     id: text('id').notNull(),
-    reviewId: text('review_id').notNull(),
+    reviewId: text('review_id'),
+    draftId: text('draft_id'),
+    trustEventId: text('trust_event_id'),
     action: text('action').notNull().default('approve'),
     status: text('status', { enum: ['pending'] })
       .notNull()
@@ -297,11 +299,22 @@ export const outbox = pgTable(
   (t) => [
     primaryKey({ columns: [t.tenantId, t.id] }),
     unique('outbox_one_intent_key').on(t.tenantId, t.reviewId),
+    unique('outbox_one_automatic_intent_key').on(t.tenantId, t.draftId),
+    foreignKey({ columns: [t.tenantId, t.draftId], foreignColumns: [drafts.tenantId, drafts.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.trustEventId],
+      foreignColumns: [trustEvents.tenantId, trustEvents.id],
+    }),
     foreignKey({
       columns: [t.tenantId, t.reviewId, t.action],
       foreignColumns: [reviews.tenantId, reviews.id, reviews.action],
     }),
-    check('outbox_approval_only', sql`${t.action} = 'approve' and ${t.status} = 'pending'`),
+    check(
+      'outbox_approval_only',
+      sql`${t.status} = 'pending' and (
+      (${t.action} = 'approve' and ${t.reviewId} is not null and ${t.draftId} is null and ${t.trustEventId} is null)
+      or (${t.action} = 'auto_send' and ${t.reviewId} is null and ${t.draftId} is not null and ${t.trustEventId} is not null))`,
+    ),
     tenantPolicy(t.tenantId),
   ],
 );
@@ -426,6 +439,96 @@ export const settingsChanges = pgTable(
     }),
     index('settings_changes_tenant_time_idx').on(t.tenantId, t.createdAt),
     check('settings_changes_reason', sql`length(btrim(${t.reason})) between 1 and 1000`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+// Evaluation payloads are synthetic, versioned evidence, never inbox messages.
+export const evaluationRuns = pgTable(
+  'evaluation_runs',
+  {
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    id: text('id').notNull(),
+    agentId: text('agent_id').notNull(),
+    contextHash: text('context_hash').notNull(),
+    suiteHash: text('suite_hash').notNull(),
+    baselineId: text('baseline_id'),
+    accepted: integer('accepted').notNull().default(0),
+    report: jsonb('report').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    foreignKey({ columns: [t.tenantId, t.baselineId], foreignColumns: [t.tenantId, t.id] }),
+    check(
+      'evaluation_runs_hashes',
+      sql`${t.agentId} ~ '^[a-f0-9]{64}$' and ${t.contextHash} ~ '^[a-f0-9]{64}$' and ${t.suiteHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+    check('evaluation_runs_accepted', sql`${t.accepted} in (0,1)`),
+    index('evaluation_runs_recent_idx').on(t.tenantId, t.createdAt),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const evaluationLabels = pgTable(
+  'evaluation_labels',
+  {
+    tenantId: text('tenant_id').notNull(),
+    runId: text('run_id').notNull(),
+    caseId: text('case_id').notNull(),
+    approverId: text('approver_id').notNull(),
+    approverName: text('approver_name').notNull(),
+    dimensions: jsonb('dimensions').notNull(),
+    rationale: text('rationale').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.runId, t.caseId] }),
+    foreignKey({
+      columns: [t.tenantId, t.runId],
+      foreignColumns: [evaluationRuns.tenantId, evaluationRuns.id],
+    }),
+    foreignKey({
+      columns: [t.tenantId, t.approverId],
+      foreignColumns: [approvers.tenantId, approvers.id],
+    }),
+    check('evaluation_labels_reason', sql`length(btrim(${t.rationale})) between 1 and 1000`),
+    tenantPolicy(t.tenantId),
+  ],
+);
+
+export const trustEvents = pgTable(
+  'trust_events',
+  {
+    tenantId: text('tenant_id').notNull(),
+    id: text('id').notNull(),
+    agentId: text('agent_id').notNull(),
+    contextHash: text('context_hash').notNull(),
+    runId: text('run_id').notNull(),
+    level: text('level', { enum: ['supervised', 'autonomous'] }).notNull(),
+    approverId: text('approver_id'),
+    approverName: text('approver_name'),
+    reason: text('reason').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.id] }),
+    foreignKey({
+      columns: [t.tenantId, t.runId],
+      foreignColumns: [evaluationRuns.tenantId, evaluationRuns.id],
+    }),
+    foreignKey({
+      columns: [t.tenantId, t.approverId],
+      foreignColumns: [approvers.tenantId, approvers.id],
+    }),
+    check(
+      'trust_events_promotion',
+      sql`${t.level} in ('supervised','autonomous') and (${t.level} <> 'autonomous' or (${t.approverId} is not null and ${t.approverName} is not null))`,
+    ),
+    check('trust_events_reason', sql`length(btrim(${t.reason})) between 1 and 1000`),
+    index('trust_events_version_idx').on(t.tenantId, t.agentId, t.contextHash, t.createdAt),
     tenantPolicy(t.tenantId),
   ],
 );

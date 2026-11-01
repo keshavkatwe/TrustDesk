@@ -42,6 +42,7 @@ export function MessageRow({
           status={item.status}
           processingState={item.processingState}
           outboxStatus={item.outbox?.status}
+          automatic={item.automatic}
         />
       </span>
     </Button>

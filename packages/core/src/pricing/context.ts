@@ -1,12 +1,16 @@
 import type { TenantTransaction } from '@trustdesk/db';
 import { tenants } from '@trustdesk/db';
 import { eq } from 'drizzle-orm';
+import { DEFAULT_MODEL } from '../ai/model.ts';
+import { agentVersion, pricingVersion } from '../ai/version.ts';
+import { readTrust } from '../evaluation/data.ts';
 import type { PricingContext } from './evaluate.ts';
 
 export async function loadPricingContext(
   tx: TenantTransaction,
   tenantId: string,
   version?: string,
+  model = DEFAULT_MODEL,
 ): Promise<PricingContext> {
   // Keep configuration stable until approval/dispatch/draft completion commits.
   // Return the locked row itself; a second tenant SELECT would repeat the same read.
@@ -25,6 +29,11 @@ export async function loadPricingContext(
     where: (row, { and, eq }) =>
       and(eq(row.tenantId, tenantId), eq(row.version, catalogue.version)),
   });
-  // Trust remains supervised until persisted evaluation and human promotion are implemented.
-  return { tenant, catalogue, rows, trust: 'supervised' };
+  const context: PricingContext = { tenant, catalogue, rows, trust: 'supervised' };
+  const event = await readTrust(tx, tenantId, agentVersion(model).id, pricingVersion(context));
+  return {
+    ...context,
+    trust: event?.level ?? 'supervised',
+    ...(event ? { trustEventId: event.id } : {}),
+  };
 }

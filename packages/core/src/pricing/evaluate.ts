@@ -3,20 +3,17 @@ import { CommercialRules } from '@trustdesk/db';
 import { Assessment, PricingRequest, type Quote } from './model.ts';
 import { addReason, applyRequestPolicy, decideDisposition } from './policy.ts';
 import { calculateQuote } from './quote.ts';
+import { assertPricingScope } from './scope.ts';
 import type { Evaluation, PricingContext } from './types.ts';
 
 export type { PricingContext } from './types.ts';
 
-export const ENGINE_VERSION = 'pricing-policy-1';
+export const ENGINE_VERSION = 'pricing-policy-4';
 
 export function evaluateRequest(context: PricingContext, rawRequest: unknown): Assessment {
   const request = PricingRequest.parse(rawRequest);
   const { tenant, catalogue } = context;
-  if (
-    catalogue.tenantId !== tenant.id ||
-    context.rows.some((row) => row.tenantId !== tenant.id || row.version !== catalogue.version)
-  )
-    throw new Error('Catalogue context must belong to exactly one business and version.');
+  assertPricingScope(context);
   const configured = CommercialRules.safeParse(tenant.commercialRules);
   const state: Evaluation = {
     context,

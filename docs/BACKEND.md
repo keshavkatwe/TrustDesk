@@ -51,8 +51,8 @@ The regression test measures actual node-postgres calls for the same Qamar fixtu
 | --- | ---: | ---: |
 | New intake | 19 | 16 |
 | Duplicate delivery | 11 | 10 |
-| Draft claim | 18 | 14 |
-| Draft completion | 17 | 15 |
+| Draft claim | 18 | 15 |
+| Draft completion | 17 | 16 |
 | Correction superseding 11 pending versions | 30 | 16 |
 
 Counts include `BEGIN`, `COMMIT`, tenant-context setup, locks and atomic queue insertion. They measure public receive/drafting service calls with a fake provider, excluding worker polling/preflight, maintenance scans and UI requests. Tenant destination resolution remains scoped to each allowed business, so checking a later business can add another lookup transaction. Supersession round trips stay constant as more versions match; the database still performs the work of updating those rows. These are query-budget checks, not a throughput or latency benchmark.
@@ -76,3 +76,10 @@ This follows [Elysia's feature/controller/service guidance](https://elysiajs.com
 The existing packages are sufficient. `neverthrow` was considered for typed errors, but the existing discriminated results need only a shared `Failure` type and constructor. Keeping that shape avoids converting the workflow into a second error-handling API. No new runtime dependency was added.
 
 Run `bun run check` for lint, types, unit/HTTP tests and builds; run `bun run db:test` against the isolated test database for transactions, RLS and races. `bun run api:generate` refreshes the OpenAPI/Hey API contract. Pure readability changes should preserve that contract, pricing engine version and assessment fingerprints.
+
+
+## Evaluation and trust
+
+`evaluation/model.ts` defines saved case/run/judge/human contracts. `checks.ts` and `gate.ts` are pure: they receive evidence, check properties and compare a candidate with a baseline. `judge.ts` performs one bounded structured judgement outside database transactions. `data.ts` owns explicit reads, the short tenant trust lock and immutable run persistence. `service.ts` exposes tenant-scoped evidence, immutable human labels and guarded named promotion. `scripts/evaluate.ts` coordinates real case runs; `eval:verify` recomputes saved gates without a key; `eval:export` preserves actual human evidence.
+
+Trust is read once alongside pricing configuration on workflow claim/completion, adding one governance query to each measured budget. A verified low-risk FAQ can queue automatically only after the configured business/version/context is promoted. `dispatch/automatic.ts` rechecks the named promotion under a trust lock, updates the draft and inserts the automatic outbox intent in the existing completion transaction. `dispatch/service.ts` handles both authorization sources, rechecks current trust for automatic replies and writes one local delivery result. No fake human review is created.

@@ -28,7 +28,7 @@ export function renderReply(assessment: Assessment, faq: string[]): string {
   };
   const missing = assessment.missing.length
     ? arabic
-      ? `يرجى تأكيد: ${assessment.missing.map((field) => arabicFields[field] ?? (field.startsWith('Catalogue match:') ? 'نوع المنتج ومواصفاته' : field.startsWith('Quantity:') ? 'الكمية المطلوبة' : field.startsWith('Rental duration:') ? 'مدة الإيجار' : 'التفاصيل غير المحددة')).join('، ')}.`
+      ? `يرجى تأكيد: ${[...new Set(assessment.missing.map((field) => arabicFields[field] ?? arabicClarification(field)))].join('، ')}.`
       : `Please confirm: ${assessment.missing.join('; ')}.`
     : '';
   const overBudget =
@@ -64,6 +64,21 @@ export function renderReply(assessment: Assessment, faq: string[]): string {
   ]
     .filter(Boolean)
     .join(' ');
+}
+
+function arabicClarification(field: string) {
+  const question = field.toLowerCase();
+  if (question.includes('date')) return 'تاريخ الفعالية';
+  if (/duration|rental.*days|rental.*months|how many months|how many.*days/.test(question))
+    return 'مدة الإيجار';
+  if (/trip/.test(question)) return 'عدد رحلات التوصيل والاستلام';
+  if (/delivery|collection/.test(question)) return 'الاستلام أو التوصيل';
+  if (/screen|dimension|size/.test(question)) return 'الحجم والمواصفات';
+  if (/catalogue match:|model|specification|catalogued/.test(question))
+    return 'نوع المنتج ومواصفاته';
+  if (/quantity:|quantity|how many|number of/.test(question)) return 'الكمية المطلوبة';
+  if (question.startsWith('rental duration:')) return 'مدة الإيجار';
+  return 'تفاصيل الطلب الإضافية';
 }
 
 // Conservative edit check: commercial numbers cannot be changed through free text.

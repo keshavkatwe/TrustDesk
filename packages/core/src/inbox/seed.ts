@@ -10,6 +10,7 @@ import {
 } from '@trustdesk/db';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { seedEvaluations } from '../evaluation/seed.ts';
 import { loadPricingContext } from '../pricing/context.ts';
 import { evaluateRequest } from '../pricing/evaluate.ts';
 import { PricingRequest } from '../pricing/model.ts';
@@ -158,6 +159,8 @@ if (import.meta.main) {
   const database = createDatabase(databaseUrl('DATABASE_ADMIN_URL'), { max: 1 });
   try {
     await seedInbox(database);
+    const evaluationCount = await seedEvaluations(database);
+    console.log(`Imported ${evaluationCount} measured evaluation runs without model calls.`);
     console.log(
       'Seeded 6 persistent sample drafts and their original customer messages. Existing decisions were preserved.',
     );

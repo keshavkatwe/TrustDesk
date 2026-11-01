@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { DEFAULT_MODEL, DraftOutput, type DraftProvider } from './model.ts';
+import { DRAFT_PARAMETERS } from './version.ts';
 
 // Standard public endpoint pricing, USD per million tokens. Unknown overrides stay unpriced.
 // https://developers.openai.com/api/docs/models/gpt-5.4-mini
@@ -18,9 +19,7 @@ export function createOpenAIProvider(apiKey: string, model = DEFAULT_MODEL): Dra
       // One bounded call; never allow SDK retries to create unrecorded spend.
       const response = await client.responses.create({
         model,
-        store: false,
-        max_output_tokens: 3000,
-        reasoning: { effort: 'low' },
+        ...DRAFT_PARAMETERS,
         input: [
           { role: 'system', content: input.system },
           { role: 'user', content: input.user },

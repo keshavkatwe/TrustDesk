@@ -19,14 +19,17 @@ test('strict provider schema excludes model prices and requires explicit nullabl
 test('prompt scopes catalogue and FAQ to one business and keeps customer instructions in user data', () => {
   const context = {
     tenant: {
+      id: 'qamar',
       name: 'Tenant Canary',
       currency: 'AED',
       timezone: 'Asia/Dubai',
       faq: ['Unique FAQ canary'],
     },
-    catalogue: { version: 'v1' },
+    catalogue: { tenantId: 'qamar', version: 'v1' },
     rows: [
       {
+        tenantId: 'qamar',
+        version: 'v1',
         id: 'OWN-SKU',
         item: 'Own product',
         itemArabic: null,

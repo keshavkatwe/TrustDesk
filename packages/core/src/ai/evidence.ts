@@ -28,6 +28,11 @@ export function buildDraftEvidence(
       })),
       { label: 'Location', value: output.request.location ?? 'Unspecified' },
       {
+        label: 'Requested date · unconfirmed',
+        value: output.request.requestedDate ?? 'Unspecified',
+      },
+      ...(output.request.notes ? [{ label: 'Customer context', value: output.request.notes }] : []),
+      {
         label: 'Delivery',
         value: `${output.request.delivery}${output.request.deliveryTrips === null ? '' : ` · ${output.request.deliveryTrips} trips`}`,
       },

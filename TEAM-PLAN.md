@@ -1,0 +1,18 @@
+# Two engineers, six weeks
+
+Goal: graduate the demonstrated local workflow into a controlled pilot, retaining **agents draft; code decides**. Engineer A owns intake, isolation, worker/outbox and operations. Engineer B owns extraction/evaluations, review UX and trust. Both review changes to money, permissions, migrations and sending.
+
+| Week | Engineer A | Engineer B | Done when |
+| --- | --- | --- | --- |
+| 1 | Map real channel identities/signatures, credential roles and recovery behavior. | Obtain independent bilingual labels, review goldset blind spots and calibrate judge disagreements. | Threat model and pilot boundaries are agreed; at least 30 reviewed cases and 10 genuine labels are traceable; production identities replace demo selectors in the plan. |
+| 2 | Implement authenticated adapter with raw-body signature tests, replay protection and tenant scope. | Add protected operator sessions/roles and evidence-preserving review screens. | Forged/unknown destinations and cross-tenant requests fail under actual runtime credentials; named actions resolve from authenticated identity. |
+| 3 | Integrate one provider's idempotent send/reconciliation path behind a disabled flag. | Expand blind Arabic/mixed holdouts; validate date/variant/unknown handling and template clarity with a bilingual reviewer. | Timeout/crash/retry drills produce one externally reconciled outcome; new language slice meets the agreed gate without changing the holdout after observing failures. |
+| 4 | Add per-tenant concurrency/spend reservations, kill switches, queue health and recovery dashboards. | Add version/config change gates, reviewable calibration exports and promotion/demotion alerts. | Injected failures stop paid retry storms; every shipped version has a stored gate result; an actual failed current-version run revokes trust before pending automatic dispatch. |
+| 5 | Measure a synthetic 50,000-message/day workload, pool contention, retention and restores. | Run supervised pilot reviews and compare edits, handoffs, latency/cost and Arabic failures. | Load/restore reports establish limits; no silent data loss or unknown send outcome remains; people can explain one complete trail from arrival to dispatch. |
+| 6 | Resolve operational/security findings and rehearse rollback/reconciliation. | Freeze pilot evidence, document limitations and obtain named release/promotion decisions. | A small supervised pilot has an accountable owner, rollback and monitoring; autonomy is enabled only for independently proven low-risk cases. |
+
+First three risks to retire: **tenant identity/isolation**, **duplicate or unauthorized external sending**, and **uncalibrated interpretation/judge errors, especially Arabic**. Each gets executable adversarial evidence before adding features. Budget and provider availability are measured alongside them, not inferred from a successful demo.
+
+AI-assisted code is reviewed like an untrusted contribution: inspect intent and boundaries, run meaningful restricted-role/concurrency tests, compare generated migrations/contracts, and verify the actual browser flow. One engineer authors; the other challenges failure cases. AI cannot approve its own labels, promotion, security exceptions or release.
+
+We refuse to ship without authenticated tenant/operator identities, source-only exact money, atomic review/outbox with reconciled sends, traceable failures/costs, independent bilingual calibration, enforced regression gates and a tested rollback. We defer a second channel, tenant memory, model routing, autonomous commercial quotes and cosmetic redesign until the first pilot is safe and useful.

@@ -7,6 +7,7 @@ export type PricingContext = {
   catalogue: typeof catalogueVersions.$inferSelect;
   rows: CatalogueRow[];
   trust: 'supervised' | 'autonomous';
+  trustEventId?: string;
 };
 
 // Internal state belongs to one evaluation. Policy and pricing append reasons in execution order.

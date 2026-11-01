@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { drafts, outbox, reviews, type TenantTransaction } from '@trustdesk/db';
 import { and, eq } from 'drizzle-orm';
+import { DEFAULT_MODEL } from '../ai/model.ts';
 import { loadPricingContext } from '../pricing/context.ts';
 import { evaluateRequest } from '../pricing/evaluate.ts';
 import { sameCommercialFacts } from '../pricing/render.ts';
@@ -25,6 +26,7 @@ export async function reviewDraft(
   tenantId: string,
   id: string,
   input: ReviewInput,
+  model = DEFAULT_MODEL,
 ): Promise<ReviewResult> {
   const target = await lockEnquiryDraft(tx, tenantId, id);
   if (!target) return failure('not_found', 'Draft not found in this business.');
@@ -46,6 +48,7 @@ export async function reviewDraft(
       draft.originalReply,
       draft.evidence,
       input.reply,
+      model,
     );
     if (rejection) return rejection;
   }
@@ -98,6 +101,7 @@ async function checkApproval(
   originalReply: string,
   rawEvidence: unknown,
   reply: string,
+  model: string,
 ): Promise<ReviewFailure | undefined> {
   const evidence = DraftEvidence.parse(rawEvidence);
   if (!evidence.assessment)
@@ -106,7 +110,7 @@ async function checkApproval(
       'This legacy sample has no pricing/policy assessment. Regenerate it before approval.',
     );
   const stored = evidence.assessment;
-  const context = await loadPricingContext(tx, tenantId, stored.catalogueVersion);
+  const context = await loadPricingContext(tx, tenantId, stored.catalogueVersion, model);
   const current = evaluateRequest(context, stored.request);
   if (current.fingerprint !== stored.fingerprint)
     return failure(

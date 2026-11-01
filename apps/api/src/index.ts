@@ -1,6 +1,7 @@
 import {
   createActivityService,
   createDraftingService,
+  createEvaluationService,
   createInboxService,
   createOpenAIProvider,
   createQualityService,
@@ -22,7 +23,7 @@ const url = databaseUrl('DATABASE_URL');
 const database = createDatabase(url);
 const allowedTenantIds = ['qamar', 'rimal'] as const;
 // Synthetic local operator. Never resolve authorization from the customer body or URL alone.
-const inbox = createInboxService(database, allowedTenantIds);
+const inbox = createInboxService(database, allowedTenantIds, process.env.OPENAI_MODEL);
 const provider = process.env.OPENAI_API_KEY
   ? createOpenAIProvider(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL)
   : undefined;
@@ -32,13 +33,16 @@ await queue.start();
 const receive = createReceiveService(database, allowedTenantIds, draftPublisher(queue));
 const model = provider?.model ?? process.env.OPENAI_MODEL;
 const quality = createQualityService(database, allowedTenantIds, model);
+const evaluation = createEvaluationService(database, allowedTenantIds, model);
 const activity = createActivityService(database, allowedTenantIds);
 const settings = createSettingsService(database, allowedTenantIds, model, Boolean(provider));
-const app = createApp({ inbox, drafting, receive, quality, activity, settings }).listen({
-  port,
-  hostname: '127.0.0.1',
-  idleTimeout: 60,
-});
+const app = createApp({ inbox, drafting, receive, quality, evaluation, activity, settings }).listen(
+  {
+    port,
+    hostname: '127.0.0.1',
+    idleTimeout: 60,
+  },
+);
 
 console.log(`TrustDesk API: http://localhost:${port}`);
 console.log(`OpenAPI: http://localhost:${port}/openapi`);

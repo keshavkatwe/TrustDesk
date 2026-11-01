@@ -74,7 +74,7 @@ export function ConfigurationCards({ settings }: { settings: Settings }) {
                 'OpenAI connection',
                 settings.ai.providerConfigured ? 'Configured' : 'Not configured',
               ],
-              ['Trust', 'Supervised'],
+              ['Trust', settings.ai.trust === 'autonomous' ? 'Autonomous' : 'Supervised'],
               ['Delivery', 'Local simulator'],
               ['Delivery catalogue row', settings.commercial.deliverySku],
               ['Crew catalogue row', settings.commercial.crewSku ?? 'Not used'],

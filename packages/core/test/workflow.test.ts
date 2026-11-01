@@ -311,8 +311,8 @@ test('receive and drafting keep database round trips bounded, including many sup
     console.info('Receive/drafting database round trips:', counts);
     expect(counts.receive).toBeLessThanOrEqual(16);
     expect(counts.duplicate).toBeLessThanOrEqual(10);
-    expect(counts.claim).toBeLessThanOrEqual(14);
-    expect(counts.complete).toBeLessThanOrEqual(15);
+    expect(counts.claim).toBeLessThanOrEqual(15);
+    expect(counts.complete).toBeLessThanOrEqual(16);
     expect(counts.correction).toBeLessThanOrEqual(16);
   } finally {
     for (const id of jobIds.slice(firstJob)) await boss.deleteJob('enquiry-draft', id);

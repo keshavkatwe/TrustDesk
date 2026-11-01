@@ -14,7 +14,7 @@ export async function startWorker(
 ) {
   const boss = queueClient(connectionString, true);
   const drafting = createDraftingService(database, allowedTenantIds, provider);
-  const dispatch = createDispatchService(database, allowedTenantIds);
+  const dispatch = createDispatchService(database, allowedTenantIds, provider?.model);
   await boss.start();
   await boss.work(DRAFT_QUEUE, { batchSize: 1, pollingIntervalSeconds: 1 }, async (jobs) => {
     for (const job of jobs) await processDraftJob(database, drafting, allowedTenantIds, job.data);

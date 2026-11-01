@@ -28,6 +28,7 @@ export async function readItems(tx: TenantTransaction, tenantId: string, id?: st
           },
         },
       },
+      automaticOutbox: { with: { delivery: true } },
       review: { with: { outbox: { with: { delivery: true } } } },
       resultRuns: {
         columns: runColumns,
@@ -45,7 +46,7 @@ export async function readItems(tx: TenantTransaction, tenantId: string, id?: st
   return data.map((draft) => {
     const { message, review } = draft;
     const { conversation } = message;
-    const intent = review?.outbox;
+    const intent = review?.outbox ?? draft.automaticOutbox;
     const delivery = intent?.delivery;
     const latestRun = message.aiRuns[0];
     const originatingRun = draft.resultRuns[0];
@@ -73,6 +74,7 @@ export async function readItems(tx: TenantTransaction, tenantId: string, id?: st
       draftReply: review?.reply ?? draft.originalReply,
       status: draft.status,
       revision: draft.revision,
+      automatic: Boolean(draft.automaticOutbox),
       decision: review
         ? {
             action: review.action,
@@ -131,7 +133,6 @@ export async function readBusiness(tx: TenantTransaction, tenantId: string) {
     timezone: tenant.timezone,
     currency: tenant.currency,
     autoSend: tenant.autoSend,
-    trust: 'supervised' as const,
     approvers: tenant.approvers,
     receivingChannels: tenant.receivingChannels,
   };

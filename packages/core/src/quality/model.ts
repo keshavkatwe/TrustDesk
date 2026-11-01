@@ -40,7 +40,9 @@ export const QualityOverview = z.object({
     catalogueVersion: z.string().nullable(),
     autoSend: z.enum(['low_risk_only', 'off']),
   }),
-  trust: z.object({ level: z.literal('supervised'), promotionAvailable: z.literal(false) }),
+  trust: z.object({
+    level: z.enum(['supervised', 'autonomous']),
+  }),
   summary: QualitySummary,
   attempts: z.array(QualityAttempt).max(QUALITY_ATTEMPT_LIMIT),
 });

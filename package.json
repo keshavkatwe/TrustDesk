@@ -24,7 +24,10 @@
     "db:studio": "bun scripts/with-env.ts turbo run db:studio --filter=@trustdesk/db",
     "replay:seed": "bun scripts/replay.ts",
     "test": "bun test apps/api/src apps/web/src/libs packages/db/src packages/core/src",
-    "check": "bun run lint && bun run typecheck && bun run test && bun run build"
+    "check": "bun run lint && bun run typecheck && bun run test && bun run build",
+    "eval:gate": "bun scripts/evaluate.ts",
+    "eval:verify": "bun scripts/verify-evaluations.ts",
+    "eval:export": "bun scripts/export-evaluations.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

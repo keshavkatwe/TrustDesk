@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { PricingRequest } from '../pricing/model.ts';
 
-export const PROMPT_VERSION = 'enquiry-draft-1';
+export const PROMPT_VERSION = 'enquiry-draft-3';
 export const DEFAULT_MODEL = 'gpt-5.4-mini-2026-03-17';
 export const GenerateInput = z.strictObject({ revision: z.number().int().positive() });
 export const GenerateResult = z.object({ id: z.string(), runId: z.string() });

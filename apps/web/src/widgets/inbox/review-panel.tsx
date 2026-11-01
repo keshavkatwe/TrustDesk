@@ -101,6 +101,7 @@ export function ReviewPanel({
             status={item.status}
             processingState={item.processingState}
             outboxStatus={item.outbox?.status}
+            automatic={item.automatic}
           />
           {item.assessment && <Badge variant="info">Pricing & policy checked</Badge>}
           {item.provenance === 'openai' && <Badge>AI prepared</Badge>}
@@ -166,6 +167,16 @@ export function ReviewPanel({
             </AlertDescription>
           </Alert>
         )
+      )}
+      {item.automatic && (
+        <Alert>
+          <CheckIcon />
+          <AlertTitle>Authorized low-risk FAQ</AlertTitle>
+          <AlertDescription>
+            Code selected a configured FAQ after a named human promoted this evaluated agent
+            version. Dispatch rechecks current trust and policy. Delivery is simulated.
+          </AlertDescription>
+        </Alert>
       )}
       {item.decision && (
         <Alert>
