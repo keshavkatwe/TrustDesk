@@ -1,16 +1,21 @@
-import { createHash, randomUUID } from 'node:crypto';
 import { eventReceipts, type TenantTransaction } from '@trustdesk/db';
-import { failure } from '../result.ts';
-import type { ReceiptResult, ReceiveResult, SourceEvent } from './model.ts';
+import { sql } from 'drizzle-orm';
+import type { SourceEvent } from './model.ts';
+import type { prepareReceipt } from './rules.ts';
 
-type TenantId = ReceiptResult['tenantId'];
-
-export async function handleRedelivery(
+export async function lockProviderMessage(
   tx: TenantTransaction,
-  tenantId: TenantId,
+  tenantId: string,
   event: SourceEvent,
-): Promise<ReceiveResult | undefined> {
-  const existing = await tx.query.messages.findFirst({
+) {
+  // Repeated deliveries of one provider message take turns until the transaction ends.
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`${tenantId}:${event.channel}:${event.message_id}`}, 0))`,
+  );
+}
+
+export function findReceivedMessage(tx: TenantTransaction, tenantId: string, event: SourceEvent) {
+  return tx.query.messages.findFirst({
     columns: { id: true, body: true },
     where: (message, { and, eq }) =>
       and(
@@ -18,57 +23,17 @@ export async function handleRedelivery(
         eq(message.channel, event.channel),
         eq(message.channelMessageId, event.message_id),
       ),
-    with: { conversation: { columns: { customer: true } } },
+    with: {
+      conversation: { columns: { customer: true } },
+      drafts: {
+        columns: { id: true },
+        orderBy: (draft, { desc }) => desc(draft.version),
+        limit: 1,
+      },
+    },
   });
-  if (!existing) return;
-
-  const conflict = existing.body !== event.text || existing.conversation.customer !== event.from;
-  const receiptId = await recordReceipt(
-    tx,
-    tenantId,
-    event,
-    existing.id,
-    conflict ? 'conflict' : 'duplicate',
-  );
-  if (conflict)
-    return failure(
-      'message_conflict',
-      'This provider message ID already exists with different content or sender.',
-    );
-
-  const draft = await tx.query.drafts.findFirst({
-    columns: { id: true },
-    where: (draft, { and, eq }) =>
-      and(eq(draft.tenantId, tenantId), eq(draft.messageId, existing.id)),
-    orderBy: (draft, { desc }) => desc(draft.version),
-  });
-  if (!draft) throw new Error('Persisted message has no draft.');
-  return {
-    ok: true,
-    tenantId,
-    receiptId,
-    messageId: existing.id,
-    draftId: draft.id,
-    outcome: 'duplicate',
-  };
 }
 
-export async function recordReceipt(
-  tx: TenantTransaction,
-  tenantId: TenantId,
-  event: SourceEvent,
-  messageId: string,
-  outcome: 'accepted' | 'duplicate' | 'conflict',
-) {
-  const receiptId = randomUUID();
-  await tx.insert(eventReceipts).values({
-    tenantId,
-    id: receiptId,
-    eventId: event.event_id,
-    messageId,
-    bodyHash: createHash('sha256').update(event.text).digest('hex'),
-    claimedTenant: event.metadata?.tenant_id ?? null,
-    outcome,
-  });
-  return receiptId;
+export function saveReceipt(tx: TenantTransaction, receipt: ReturnType<typeof prepareReceipt>) {
+  return tx.insert(eventReceipts).values(receipt);
 }

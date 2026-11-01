@@ -1,10 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import { type Database, withTenant } from '@trustdesk/db';
-import { sql } from 'drizzle-orm';
 import type { EnqueueDraft } from '../queue/client.ts';
 import { failure } from '../result.ts';
-import { saveNewMessage } from './messages.ts';
+import { reserveConversation, saveNewMessage } from './messages.ts';
 import { type ReceiptResult, type ReceiveResult, SourceEvent } from './model.ts';
-import { handleRedelivery } from './receipts.ts';
+import { findReceivedMessage, lockProviderMessage, saveReceipt } from './receipts.ts';
+import { classifyDelivery, prepareMessage, prepareReceipt } from './rules.ts';
 
 type TenantId = ReceiptResult['tenantId'];
 
@@ -18,7 +19,6 @@ export function createReceiveService(
       const parsed = SourceEvent.safeParse(rawInput);
       if (!parsed.success)
         return failure('invalid_request', 'Check the event fields and timestamps.');
-
       const event = parsed.data;
       const tenantId = await resolveTenant(database, allowedTenantIds, event);
       if (!tenantId)
@@ -27,16 +27,40 @@ export function createReceiveService(
           'No allowed business owns this receiving destination.',
         );
 
-      // Every write and the queue job share this transaction, including writes inside helpers.
+      // Every write and the queue job share this transaction. Rules below do no database I/O.
       return withTenant(database, tenantId, async (tx): Promise<ReceiveResult> => {
-        // Repeated deliveries of one provider message take turns until this transaction ends.
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtextextended(${`${tenantId}:${event.channel}:${event.message_id}`}, 0))`,
-        );
-        const redelivery = await handleRedelivery(tx, tenantId, event);
-        if (redelivery) return redelivery;
+        await lockProviderMessage(tx, tenantId, event);
+        const existing = await findReceivedMessage(tx, tenantId, event);
+        const outcome = classifyDelivery(event, existing);
+        const receiptId = randomUUID();
+        if (existing) {
+          await saveReceipt(tx, prepareReceipt(tenantId, event, existing.id, receiptId, outcome));
+          if (outcome === 'conflict')
+            return failure(
+              'message_conflict',
+              'This provider message ID already exists with different content or sender.',
+            );
+          const draft = existing.drafts[0];
+          if (!draft) throw new Error('Persisted message has no draft.');
+          return {
+            ok: true,
+            tenantId,
+            receiptId,
+            messageId: existing.id,
+            draftId: draft.id,
+            outcome: 'duplicate',
+          };
+        }
 
-        return saveNewMessage(tx, tenantId, event, enqueue);
+        const conversation = await reserveConversation(tx, tenantId, event, randomUUID());
+        const messageId = randomUUID(),
+          draftId = randomUUID();
+        const plan = prepareMessage(tenantId, event, conversation, messageId, draftId);
+        await saveNewMessage(tx, plan);
+        await saveReceipt(tx, prepareReceipt(tenantId, event, messageId, receiptId, 'accepted'));
+        if (!(await enqueue(tx, { tenantId, draftId, revision: 1 })))
+          throw new Error('Unable to queue the persisted enquiry.');
+        return { ok: true, tenantId, receiptId, messageId, draftId, outcome: 'accepted' };
       });
     },
   };

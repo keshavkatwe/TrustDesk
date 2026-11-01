@@ -5,7 +5,7 @@ export const STALLED_ATTEMPT_MS = 90_000;
 
 export function findActiveRun(tx: TenantTransaction, tenantId: string, messageId: string) {
   return tx.query.aiRuns.findFirst({
-    columns: { id: true },
+    columns: { id: true, createdAt: true },
     where: (run, { and, eq }) =>
       and(eq(run.tenantId, tenantId), eq(run.messageId, messageId), eq(run.status, 'running')),
   });

@@ -18,8 +18,8 @@ pg-boss job → worker                    → same core services
 
 | Task | Entry point | Details |
 | --- | --- | --- |
-| Receive a customer message | [receive/service.ts](../packages/core/src/receive/service.ts) | [receipts.ts](../packages/core/src/receive/receipts.ts) handles duplicates/conflicts; [messages.ts](../packages/core/src/receive/messages.ts) saves new messages and supersedes old drafts. |
-| Generate a draft | [ai/service.ts](../packages/core/src/ai/service.ts) | [claim.ts](../packages/core/src/ai/claim.ts) reserves an attempt; [generate.ts](../packages/core/src/ai/generate.ts) validates provider output; [complete.ts](../packages/core/src/ai/complete.ts) checks freshness and saves the result. |
+| Receive a customer message | [receive/service.ts](../packages/core/src/receive/service.ts) | [rules.ts](../packages/core/src/receive/rules.ts) classifies deliveries and prepares records without I/O; [receipts.ts](../packages/core/src/receive/receipts.ts) and [messages.ts](../packages/core/src/receive/messages.ts) own persistence. |
+| Generate a draft | [ai/service.ts](../packages/core/src/ai/service.ts) | [claim.ts](../packages/core/src/ai/claim.ts) and [complete.ts](../packages/core/src/ai/complete.ts) coordinate database phases. [rules.ts](../packages/core/src/ai/rules.ts) makes pure decisions; [data.ts](../packages/core/src/ai/data.ts) reads/writes records. [generate.ts](../packages/core/src/ai/generate.ts) calls the provider and validates output. |
 | Calculate prices and decide policy | [pricing/evaluate.ts](../packages/core/src/pricing/evaluate.ts) | [policy.ts](../packages/core/src/pricing/policy.ts) checks request/routing rules; [lines.ts](../packages/core/src/pricing/lines.ts) validates and prices products; [quote.ts](../packages/core/src/pricing/quote.ts) adds required fees and calculates discount/VAT. |
 | Read or review the inbox | [inbox/service.ts](../packages/core/src/inbox/service.ts) | [queries.ts](../packages/core/src/inbox/queries.ts) builds the inbox view; [review.ts](../packages/core/src/inbox/review.ts) checks and records a named decision. |
 | Simulate delivery | [dispatch/service.ts](../packages/core/src/dispatch/service.ts) | Read approval, lock the conversation, return any existing result, recheck current policy and record one delivery/cancellation. |
@@ -35,9 +35,33 @@ pg-boss job → worker                    → same core services
 4. Review checks the named approver, current draft and submitted revision. Approval also recalculates policy and checks edited commercial facts. Draft status, review/edit history and approved outbox intent commit together.
 5. The worker scans pending outbox work. Dispatch checks freshness and policy again, then records a simulated send or cancellation. Repeated dispatch returns the existing immutable result.
 
+## Pure decisions and database work
+
+The receive and drafting `rules.ts` modules accept data and return decisions or prepared records. They do not query the database, read environment variables, generate random identifiers or read the clock. Callers supply IDs and timestamps. Pricing, prompt building and evidence rendering also operate on loaded data.
+
+Services and persistence functions perform I/O. For example, completion loads current pricing under its transaction, passes it to `prepareDraft`, and saves the returned plan. Failure decisions are persisted through the same transaction. Reusing loaded records within a phase avoids repeated reads; completion still needs a fresh read because a review, correction or settings save can happen during the provider call.
+
+Intake uses one conversation upsert to reserve the next message sequence. Its conflict key is business + channel + customer, so subsequent messages reuse that conversation. The saved `latestSequence` counter is authoritative: new conversations start at 1, and existing conversations increment it under the write lock. Message/receipt/draft/job failure rolls that increment back. Imports must keep the counter consistent with their message sequences. Earlier pending versions are superseded with one update; reviewed versions are preserved.
+
+The shared draft loader fetches the message and its latest draft together. Pricing returns the locked business row directly and loads catalogue metadata once. Claim reads the active attempt first and issues an expiry update only when needed. History reads are bounded to 21 records: the extra record proves the existing 20-message limit has been exceeded, before any provider call.
+
+The regression test measures actual node-postgres calls for the same Qamar fixture before and after these changes:
+
+| Database phase | Before | After |
+| --- | ---: | ---: |
+| New intake | 19 | 16 |
+| Duplicate delivery | 11 | 10 |
+| Draft claim | 18 | 14 |
+| Draft completion | 17 | 15 |
+| Correction superseding 11 pending versions | 30 | 16 |
+
+Counts include `BEGIN`, `COMMIT`, tenant-context setup, locks and atomic queue insertion. They measure public receive/drafting service calls with a fake provider, excluding worker polling/preflight, maintenance scans and UI requests. Tenant destination resolution remains scoped to each allowed business, so checking a later business can add another lookup transaction. Supersession round trips stay constant as more versions match; the database still performs the work of updating those rows. These are query-budget checks, not a throughput or latency benchmark.
+
 ## Transactions and errors
 
 The transaction is visible as `withTenant(database, tenantId, tx => ...)`. Helpers receive that same `tx`; they do not quietly start another transaction. The database helper sets tenant context for that transaction only, and every business query also carries an explicit tenant filter.
+
+Allowed-business checks are in-memory guards at public service entry points. `withTenant` adds one context-setting statement inside each database phase; adding a tenant predicate to a query adds no separate statement. Pure rule functions need neither authorization checks nor transaction objects.
 
 [inbox/locks.ts](../packages/core/src/inbox/locks.ts) owns the shared draft locking and freshness check. Always lock the conversation before the draft. Pricing holds a shared business-row lock through commit; settings take an exclusive lock. These checks prevent a correction, review or settings save from leaving stale work approved or applied.
 

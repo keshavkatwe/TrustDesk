@@ -107,6 +107,7 @@ function event() {
     text: 'Can I buy 2 iPhone 16 phones in Dubai? We will collect.',
   };
 }
+
 async function item(id: string) {
   return (await inbox.inbox('qamar'))?.items.find((i) => i.id === id);
 }
@@ -234,6 +235,89 @@ afterAll(async () => {
     });
   await boss.stop();
   await Promise.all([app.close(), other.close(), admin.close()]);
+});
+test('receive and drafting keep database round trips bounded, including many superseded versions', async () => {
+  const measured = createDatabase(appUrl, { max: 1 });
+  type Phase = 'receive' | 'duplicate' | 'claim' | 'complete' | 'correction';
+  let phase: Phase = 'receive';
+  const counts: Record<Phase, number> = {
+    receive: 0,
+    duplicate: 0,
+    claim: 0,
+    complete: 0,
+    correction: 0,
+  };
+  // Observe actual driver calls, including BEGIN/COMMIT, RLS setup, locks and queue insertion.
+  // Query parameters/customer payloads are deliberately neither retained nor logged.
+  measured.pool.on('connect', (client) => {
+    client.query = new Proxy(client.query, {
+      apply(query, receiver, args) {
+        counts[phase]++;
+        return Reflect.apply(query, receiver, args);
+      },
+    });
+  });
+  const intake = createReceiveService(measured, ['qamar'], enqueue);
+  const input = event();
+  const firstJob = jobIds.length;
+  try {
+    const received = await intake.receive(input);
+    if (!received.ok) throw new Error('Receive failed');
+    phase = 'duplicate';
+    expect(await intake.receive(input)).toMatchObject({ ok: true, outcome: 'duplicate' });
+    phase = 'claim';
+    const drafting = createDraftingService(measured, ['qamar'], {
+      ...provider,
+      async generate(prompt) {
+        phase = 'complete';
+        return provider.generate(prompt);
+      },
+    });
+    const generated = await drafting.generate('qamar', received.draftId, { revision: 1 });
+    if (!generated.ok) throw new Error('Generate failed');
+    // More pending versions must not cause a read/update round trip for each version.
+    await withTenant(admin, 'qamar', async (tx) => {
+      const source = await tx.query.drafts.findFirst({
+        where: (draft, { and, eq }) => and(eq(draft.tenantId, 'qamar'), eq(draft.id, generated.id)),
+      });
+      if (!source) throw new Error('Generated draft missing');
+      await tx.insert(drafts).values(
+        Array.from({ length: 10 }, (_, index) => ({
+          tenantId: 'qamar',
+          id: randomUUID(),
+          messageId: received.messageId,
+          version: index + 3,
+          status: 'needs_approval' as const,
+          originalReply: source.originalReply,
+          evidence: source.evidence,
+        })),
+      );
+    });
+    phase = 'correction';
+    const correction = await intake.receive({
+      ...input,
+      event_id: randomUUID(),
+      message_id: randomUUID(),
+      text: 'Actually make that 3 phones.',
+    });
+    expect(correction.ok).toBe(true);
+    const older = await withTenant(admin, 'qamar', (tx) =>
+      tx.query.drafts.findMany({
+        where: (draft, { and, eq }) =>
+          and(eq(draft.tenantId, 'qamar'), eq(draft.messageId, received.messageId)),
+      }),
+    );
+    expect(older.every((draft) => draft.status === 'superseded')).toBe(true);
+    console.info('Receive/drafting database round trips:', counts);
+    expect(counts.receive).toBeLessThanOrEqual(16);
+    expect(counts.duplicate).toBeLessThanOrEqual(10);
+    expect(counts.claim).toBeLessThanOrEqual(14);
+    expect(counts.complete).toBeLessThanOrEqual(15);
+    expect(counts.correction).toBeLessThanOrEqual(16);
+  } finally {
+    for (const id of jobIds.slice(firstJob)) await boss.deleteJob('enquiry-draft', id);
+    await measured.close();
+  }
 });
 test('competing deliveries save separate receipts, one message and one atomic pg-boss job', async () => {
   const input = event();
@@ -716,5 +800,84 @@ test('outbox recovery excludes recorded results before applying the 25-item batc
         ),
       );
     });
+  }
+});
+
+test('concurrent follow-ups reserve unique sequences and failed enqueue rolls the counter back', async () => {
+  const firstJob = jobIds.length;
+  const input = event();
+  const followup = () => ({
+    ...input,
+    event_id: randomUUID(),
+    message_id: randomUUID(),
+    text: 'Another detail for this enquiry.',
+  });
+  try {
+    expect((await receive.receive(input)).ok).toBe(true);
+    const results = await Promise.all([
+      receive.receive(followup()),
+      createReceiveService(other, ['qamar'], enqueue).receive(followup()),
+    ]);
+    expect(results.every((result) => result.ok)).toBe(true);
+    const failed = followup();
+    const broken = createReceiveService(app, ['qamar'], async (tx, job) => {
+      await enqueue(tx, job);
+      throw new Error('Intentional counter rollback');
+    });
+    await expect(broken.receive(failed)).rejects.toThrow('Intentional counter rollback');
+    expect((await receive.receive(followup())).ok).toBe(true);
+    const conversation = await withTenant(app, 'qamar', (tx) =>
+      tx.query.conversations.findFirst({
+        where: (conversation, { and, eq }) =>
+          and(eq(conversation.tenantId, 'qamar'), eq(conversation.customer, input.from)),
+        with: {
+          messages: {
+            columns: { sequence: true, channelMessageId: true },
+            orderBy: (message, { asc }) => asc(message.sequence),
+          },
+        },
+      }),
+    );
+    expect(conversation?.latestSequence).toBe(4);
+    expect(conversation?.messages.map((message) => message.sequence)).toEqual([1, 2, 3, 4]);
+    expect(
+      conversation?.messages.some((message) => message.channelMessageId === failed.message_id),
+    ).toBe(false);
+  } finally {
+    for (const id of jobIds.slice(firstJob)) await boss.deleteJob('enquiry-draft', id);
+  }
+});
+
+test('oversized conversation history is rejected before an AI attempt or provider call', async () => {
+  const firstJob = jobIds.length;
+  const input = event();
+  try {
+    let draftId = '';
+    for (let index = 0; index < 22; index++) {
+      const received = await receive.receive({
+        ...input,
+        event_id: randomUUID(),
+        message_id: randomUUID(),
+      });
+      if (!received.ok) throw new Error('Receive failed');
+      draftId = received.draftId;
+    }
+    const before = paidCalls;
+    const result = await createDraftingService(app, ['qamar'], provider).generate(
+      'qamar',
+      draftId,
+      { revision: 1 },
+    );
+    expect(result).toMatchObject({ ok: false, code: 'invalid_request' });
+    expect(paidCalls).toBe(before);
+    const attempts = await withTenant(app, 'qamar', (tx) =>
+      tx.query.aiRuns.findMany({
+        columns: { id: true },
+        where: (run, { and, eq }) => and(eq(run.tenantId, 'qamar'), eq(run.sourceDraftId, draftId)),
+      }),
+    );
+    expect(attempts).toEqual([]);
+  } finally {
+    for (const id of jobIds.slice(firstJob)) await boss.deleteJob('enquiry-draft', id);
   }
 });

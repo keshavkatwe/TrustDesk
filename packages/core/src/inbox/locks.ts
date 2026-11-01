@@ -34,24 +34,27 @@ export async function lockEnquiryDraft(tx: TenantTransaction, tenantId: string, 
   const conversation = await lockConversation(tx, tenantId, target.message.conversationId);
   const draft = await lockDraft(tx, tenantId, id);
   if (!draft || !conversation) return null;
-  const message = await tx.query.messages.findFirst({
+  // The latest version is related data, so load it with the message in one statement.
+  const messageWithDrafts = await tx.query.messages.findFirst({
     where: (message, { and, eq }) =>
       and(eq(message.tenantId, tenantId), eq(message.id, draft.messageId)),
+    with: {
+      drafts: {
+        columns: { id: true },
+        orderBy: (candidate, { desc }) => desc(candidate.version),
+        limit: 1,
+      },
+    },
   });
-  const latest = await tx.query.drafts.findFirst({
-    columns: { id: true },
-    where: (candidate, { and, eq }) =>
-      and(eq(candidate.tenantId, tenantId), eq(candidate.messageId, draft.messageId)),
-    orderBy: (candidate, { desc }) => desc(candidate.version),
-  });
-  if (!message) return null;
+  if (!messageWithDrafts) return null;
+  const { drafts: versions, ...message } = messageWithDrafts;
   return {
     draft,
     conversation,
     message,
     isCurrent:
       draft.status === 'needs_approval' &&
-      latest?.id === id &&
+      versions[0]?.id === id &&
       message.sequence === conversation.latestSequence,
   };
 }
