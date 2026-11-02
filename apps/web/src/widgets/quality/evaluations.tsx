@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CircleCheckIcon, LoaderCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 import {
   getEvaluationRunOptions,
@@ -6,6 +7,7 @@ import {
   labelEvaluationMutation,
   promoteTrustMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadError, LoadingWorkspace } from '@/components/workspace-states';
 import { formatTimestamp } from '@/libs/date';
@@ -71,6 +74,26 @@ export function Evaluations({ tenant }: { tenant: Tenant }) {
         <CardDescription>{evidence.trust.reason}</CardDescription>
       </CardHeader>
       <CardContent className="flex min-w-0 flex-col gap-4">
+        {evidence.trust.level === 'autonomous' && (
+          <Alert role="status">
+            <CircleCheckIcon />
+            <AlertTitle>Promotion recorded for {tenant.shortName}</AlertTitle>
+            <AlertDescription className="flex flex-col gap-1">
+              <p>
+                {tenant.autoSend === 'off'
+                  ? 'Automatic sending remains disabled for this business.'
+                  : 'Eligible English FAQ replies can now proceed automatically.'}{' '}
+                Firm quotes still require human approval.
+              </p>
+              {evidence.trust.by && evidence.trust.at && (
+                <p>
+                  Promoted by {evidence.trust.by} ·{' '}
+                  {formatTimestamp(evidence.trust.at, tenant.timezone)}
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
         {selected ? (
           <>
             <Field>
@@ -181,6 +204,8 @@ export function Evaluations({ tenant }: { tenant: Tenant }) {
               key={inspectedRunId}
               tenant={tenant}
               runId={inspectedRunId}
+              promoted={evidence.trust.level === 'autonomous'}
+              onPromoted={() => setInspectedRunId(null)}
               current={
                 evidence.runs.find((run) => run.id === inspectedRunId)?.agent.id ===
                   evidence.currentAgentId &&
@@ -199,10 +224,14 @@ function RunEvidence({
   tenant,
   runId,
   current,
+  promoted,
+  onPromoted,
 }: {
   tenant: Tenant;
   runId: string;
   current: boolean;
+  promoted: boolean;
+  onPromoted: () => void;
 }) {
   const query = useQuery({
     ...getEvaluationRunOptions({ path: { tenantId: tenant.id, runId } }),
@@ -217,6 +246,16 @@ function RunEvidence({
   if (!result) return <p>No completed cases.</p>;
   return (
     <div className="flex min-w-0 flex-col gap-5">
+      {current && promoted && (
+        <Alert role="status">
+          <CircleCheckIcon />
+          <AlertTitle>This version is already promoted</AlertTitle>
+          <AlertDescription>
+            The promotion is saved for {tenant.shortName}. You can close this dialog; firm quotes
+            still require human approval.
+          </AlertDescription>
+        </Alert>
+      )}
       <p className="text-sm">
         Human labels: {run.calibration.labels}/5 · Agreement:{' '}
         {run.calibration.comparisons
@@ -256,9 +295,13 @@ function RunEvidence({
         result={result}
         onSaved={() => void query.refetch()}
       />
-      {current && run.report.accepted && run.report.gate.passed && run.calibration.ready && (
-        <Promotion tenant={tenant} runId={runId} />
-      )}
+      {current &&
+        !promoted &&
+        run.report.accepted &&
+        run.report.gate.passed &&
+        run.calibration.ready && (
+          <Promotion tenant={tenant} runId={runId} onPromoted={onPromoted} />
+        )}
     </div>
   );
 }
@@ -480,64 +523,93 @@ function CaseEvidence({
   );
 }
 
-function Promotion({ tenant, runId }: { tenant: Tenant; runId: string }) {
+function Promotion({
+  tenant,
+  runId,
+  onPromoted,
+}: {
+  tenant: Tenant;
+  runId: string;
+  onPromoted: () => void;
+}) {
   const client = useQueryClient(),
     mutation = useMutation({
       ...promoteTrustMutation(),
-      onSuccess: () => void client.invalidateQueries(),
+      onSuccess: async () => {
+        await client.invalidateQueries();
+        onPromoted();
+      },
     });
   const [reviewer, setReviewer] = useState(''),
     [reason, setReason] = useState('');
   return (
     <form
-      className="flex flex-col gap-3 border-t pt-4"
+      className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault();
+        if (mutation.isPending || mutation.isSuccess) return;
         mutation.mutate({
           path: { tenantId: tenant.id },
           body: { runId, approverId: reviewer, reason },
         });
       }}
     >
+      <Separator />
       <p className="font-medium">Named promotion</p>
       <p className="text-sm text-muted-foreground">
         Promotion applies only to this business, agent and configuration. Firm quotes still need
         approval; Rimal auto-send remains off.
       </p>
-      <Select value={reviewer} onValueChange={setReviewer}>
-        <SelectTrigger aria-label="Promotion reviewer">
-          <SelectValue placeholder="Choose reviewer" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {tenant.approvers.map((person) => (
-              <SelectItem key={person.id} value={person.id}>
-                {person.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <Textarea
-        aria-label="Promotion reason"
-        placeholder="Reason for promotion"
-        required
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-        maxLength={1000}
-      />
-      <Button disabled={!reviewer || !reason.trim() || mutation.isPending}>
-        Promote evaluated version
-      </Button>
+      <fieldset
+        disabled={mutation.isPending || mutation.isSuccess}
+        className="flex min-w-0 flex-col gap-3"
+      >
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="promotion-reviewer">Promotion reviewer</FieldLabel>
+            <Select value={reviewer} onValueChange={setReviewer}>
+              <SelectTrigger id="promotion-reviewer">
+                <SelectValue placeholder="Choose reviewer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {tenant.approvers.map((person) => (
+                    <SelectItem key={person.id} value={person.id}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="promotion-reason">Promotion reason</FieldLabel>
+            <Textarea
+              id="promotion-reason"
+              placeholder="Reason for promotion"
+              required
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              maxLength={1000}
+            />
+          </Field>
+        </FieldGroup>
+        <Button disabled={!reviewer || !reason.trim() || mutation.isPending || mutation.isSuccess}>
+          {mutation.isPending ? (
+            <>
+              <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />
+              Promoting…
+            </>
+          ) : (
+            'Promote evaluated version'
+          )}
+        </Button>
+      </fieldset>
       {mutation.isError && (
-        <p role="alert" className="text-sm text-destructive">
-          {mutation.error.message}
-        </p>
-      )}
-      {mutation.isSuccess && (
-        <p role="status" className="text-sm">
-          Promotion recorded.
-        </p>
+        <Alert variant="destructive">
+          <AlertTitle>Promotion was not recorded</AlertTitle>
+          <AlertDescription>{mutation.error.message}</AlertDescription>
+        </Alert>
       )}
     </form>
   );

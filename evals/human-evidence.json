@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-11-02T04:16:13.900Z",
+  "labels": [
+    {
+      "caseId": "q01",
+      "approverId": "u_aisha",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "This is good.",
+      "approverName": "Aisha K.",
+      "createdAt": "2026-11-01T19:29:46.207Z",
+      "tenantId": "qamar",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca"
+    },
+    {
+      "caseId": "q03",
+      "approverId": "u_rahul",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "This is good.",
+      "approverName": "Rahul M.",
+      "createdAt": "2026-11-01T19:30:04.141Z",
+      "tenantId": "qamar",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca"
+    },
+    {
+      "caseId": "q02",
+      "approverId": "u_aisha",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "This is good.",
+      "approverName": "Aisha K.",
+      "createdAt": "2026-11-01T19:30:29.716Z",
+      "tenantId": "qamar",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca"
+    },
+    {
+      "caseId": "q04",
+      "approverId": "u_aisha",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "This is good.",
+      "approverName": "Aisha K.",
+      "createdAt": "2026-11-01T19:30:46.289Z",
+      "tenantId": "qamar",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca"
+    },
+    {
+      "caseId": "q05",
+      "approverId": "u_aisha",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "This is good.",
+      "approverName": "Aisha K.",
+      "createdAt": "2026-11-01T19:31:02.028Z",
+      "tenantId": "qamar",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca"
+    },
+    {
+      "caseId": "r01",
+      "approverId": "u_faisal",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "Looks good.",
+      "approverName": "Faisal A.",
+      "createdAt": "2026-11-02T04:10:08.172Z",
+      "tenantId": "rimal",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f"
+    },
+    {
+      "caseId": "r06",
+      "approverId": "u_faisal",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "good",
+      "approverName": "Faisal A.",
+      "createdAt": "2026-11-02T04:10:35.989Z",
+      "tenantId": "rimal",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f"
+    },
+    {
+      "caseId": "r08",
+      "approverId": "u_faisal",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "Good",
+      "approverName": "Faisal A.",
+      "createdAt": "2026-11-02T04:10:50.800Z",
+      "tenantId": "rimal",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f"
+    },
+    {
+      "caseId": "r10",
+      "approverId": "u_faisal",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "Good",
+      "approverName": "Faisal A.",
+      "createdAt": "2026-11-02T04:11:01.517Z",
+      "tenantId": "rimal",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f"
+    },
+    {
+      "caseId": "r12",
+      "approverId": "u_faisal",
+      "dimensions": {
+        "intent_fidelity": "pass",
+        "language": "pass",
+        "helpfulness": "pass"
+      },
+      "rationale": "Good",
+      "approverName": "Faisal A.",
+      "createdAt": "2026-11-02T04:11:17.326Z",
+      "tenantId": "rimal",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f"
+    }
+  ],
+  "events": [
+    {
+      "tenantId": "qamar",
+      "id": "9f7caa1f-9c5f-4fcc-8b34-110693b040c6",
+      "agentId": "0fa10aeefeecce1cf0dd9d67f97af8649dd8ed2ffbd45543ec16f98817d9ff89",
+      "contextHash": "b2896d31133b458f39812c74f4f3018295599542164a5abc461a6b5278b206e6",
+      "runId": "f6f7f7d6-d7f1-432a-a170-dd5459905aa7",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing.",
+      "createdAt": "2026-11-01T11:03:18.485Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "gate-40dd65c6-ee28-4694-9ce2-c016c36d7d17",
+      "agentId": "270b2856ff69e861d87e25ba5701f7dd0a6c5491139cfb00d27d996e58918b04",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "40dd65c6-ee28-4694-9ce2-c016c36d7d17",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "1 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 1 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:22:40.151Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "gate-1daaa12d-6e41-4081-a8b9-c00a4995ffe4",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "1daaa12d-6e41-4081-a8b9-c00a4995ffe4",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "Overall pass rate is below 95%. Unassessable and failed judges are not passes. 1 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:27:40.286Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "58c0d793-48d2-4a07-904d-6ae318018e82",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca",
+      "level": "autonomous",
+      "approverId": "u_aisha",
+      "approverName": "Aisha K.",
+      "reason": "Good now",
+      "createdAt": "2026-11-02T03:58:08.849Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "4cf8e6b3-0f23-49b9-9603-97236b32f190",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca",
+      "level": "autonomous",
+      "approverId": "u_aisha",
+      "approverName": "Aisha K.",
+      "reason": "Good now",
+      "createdAt": "2026-11-02T03:58:12.177Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "7b7b7431-4bb6-40d5-9f31-acf29ef8ef5b",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "706aadbd-8338-4ee7-9dd8-c45eb4ecefca",
+      "level": "autonomous",
+      "approverId": "u_aisha",
+      "approverName": "Aisha K.",
+      "reason": "Good now",
+      "createdAt": "2026-11-02T03:58:23.602Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "ffd7e448-1ba0-4fbb-9c1d-08d3fefdee32",
+      "agentId": "b95e9018cc8a74950e033a7998c0dc6949d78d5416cc048a2ee54d426e4d12db",
+      "contextHash": "b2896d31133b458f39812c74f4f3018295599542164a5abc461a6b5278b206e6",
+      "runId": "ff29f3c3-4f75-4c28-b1d0-f3d6e9c43034",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "1 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing.",
+      "createdAt": "2026-11-01T10:57:31.066Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "e1061d9e-3c7b-4369-a13b-d3e0e7f4a3a9",
+      "agentId": "c2326c6067cf1bb882b9a4daf56c3169d266b021bad4502528498bfa65cb58a3",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "8ce918bf-c104-4a2f-b91c-4ac13db3d68c",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "8 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 12 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:10:18.588Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "gate-15043fe5-7f44-41c8-9fc0-fdc5fe3b70fb",
+      "agentId": "f1506f9fcc10a07f095fa79809cf6f9f0060f3a65ee32c33856ef7da4b2700cc",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "15043fe5-7f44-41c8-9fc0-fdc5fe3b70fb",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "8 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. Goldset, judge or business configuration differs from the accepted baseline; establish a reviewed new baseline. 11 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:33:27.984Z"
+    },
+    {
+      "tenantId": "qamar",
+      "id": "gate-ec017115-1565-4c0e-a1ec-cf3b3b76fcf2",
+      "agentId": "f1506f9fcc10a07f095fa79809cf6f9f0060f3a65ee32c33856ef7da4b2700cc",
+      "contextHash": "beddc919c08ef3dff8ab9402a22176edbfc6276ebb23d585f79c29571d9df3cd",
+      "runId": "ec017115-1565-4c0e-a1ec-cf3b3b76fcf2",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "8 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 11 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:37:21.583Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "4db07363-5505-487c-902e-2b827038d925",
+      "agentId": "0fa10aeefeecce1cf0dd9d67f97af8649dd8ed2ffbd45543ec16f98817d9ff89",
+      "contextHash": "cd7c8df74e98728159e0b57b6cc4c611a3424d918a5a5cc9aecf20f19098f703",
+      "runId": "2e9d5079-efb5-4494-a813-13a7390c73a1",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "1 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing.",
+      "createdAt": "2026-11-01T11:03:35.140Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "gate-23bade60-dfe4-489b-9ce4-acc6a63f9989",
+      "agentId": "270b2856ff69e861d87e25ba5701f7dd0a6c5491139cfb00d27d996e58918b04",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "23bade60-dfe4-489b-9ce4-acc6a63f9989",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "1 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 2 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:22:58.792Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "c9c8377b-ce87-4dda-80b8-9df4e96ca40b",
+      "agentId": "8d1e15fe4656103f58392c268609bfb4ed2bf3f87e73f73ed45fe9bfbd4ef207",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "008379db-53b3-4e04-b461-96c90ffe30ee",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing.",
+      "createdAt": "2026-11-01T11:06:32.752Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "gate-ddfb25ca-bf0e-49b1-98bc-01ba0a9b4f2c",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "ddfb25ca-bf0e-49b1-98bc-01ba0a9b4f2c",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 1 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:28:00.215Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "ffa9aed6-18e6-49bc-b720-830c9b9abb86",
+      "agentId": "9a9cac683530edfb1449d2b7db45f13ad777b2a1b5f556104e96d1cc6da8f68f",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "527c2286-b9a2-4df1-bc32-d38fd3029e6f",
+      "level": "autonomous",
+      "approverId": "u_faisal",
+      "approverName": "Faisal A.",
+      "reason": "Good to go",
+      "createdAt": "2026-11-02T04:11:26.765Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "ce384999-679a-49dd-9c39-28bd4e506618",
+      "agentId": "b95e9018cc8a74950e033a7998c0dc6949d78d5416cc048a2ee54d426e4d12db",
+      "contextHash": "cd7c8df74e98728159e0b57b6cc4c611a3424d918a5a5cc9aecf20f19098f703",
+      "runId": "7f6c26cd-a414-4b06-a0cd-1d2f492465e8",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "1 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing.",
+      "createdAt": "2026-11-01T10:57:49.832Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "57d83d85-80b2-45b9-a21e-256824244634",
+      "agentId": "c2326c6067cf1bb882b9a4daf56c3169d266b021bad4502528498bfa65cb58a3",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "58a6e504-1c2f-48f6-b012-1abb1133d1b8",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "9 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 10 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:10:35.392Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "gate-27e60f9a-a976-412b-a91a-184144ef7504",
+      "agentId": "f1506f9fcc10a07f095fa79809cf6f9f0060f3a65ee32c33856ef7da4b2700cc",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "27e60f9a-a976-412b-a91a-184144ef7504",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "10 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. Goldset, judge or business configuration differs from the accepted baseline; establish a reviewed new baseline. 10 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:33:53.444Z"
+    },
+    {
+      "tenantId": "rimal",
+      "id": "gate-9cce79c8-79b9-4495-a02b-73e0ba51d32b",
+      "agentId": "f1506f9fcc10a07f095fa79809cf6f9f0060f3a65ee32c33856ef7da4b2700cc",
+      "contextHash": "73e81db8e388a61caf232a4952072453de92f9f37ceff05992e5b2911d230659",
+      "runId": "9cce79c8-79b9-4495-a02b-73e0ba51d32b",
+      "level": "supervised",
+      "approverId": null,
+      "approverName": null,
+      "reason": "10 hard check failures. Overall pass rate is below 95%. Unassessable and failed judges are not passes. Arabic / mixed / Arabizi pass rate is below 95% or missing. 10 previously passing cases regressed.",
+      "createdAt": "2026-11-01T11:37:48.989Z"
+    }
+  ]
+}

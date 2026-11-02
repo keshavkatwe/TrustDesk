@@ -23,6 +23,7 @@ Codex assisted with implementation, source review, test design, debugging and do
 | The judge sometimes contradicted minor-unit totals or ignored code-added missing questions. | Revised its rubric and supplied one consolidated final draft, with stronger reasoning. Real outputs, rationales and earlier failures remain stored; independent calibration is still required. |
 | JSONB reordered nested parameter keys, creating a false configuration mismatch. | Added value-based canonical comparison and a regression covering reordered keys versus genuinely changed reasoning parameters. |
 | The human-label response parser rejected internal tenant/run columns. | Real concurrent-label tests exposed the projection error; corrected the response boundary and verified label races/promotion guards. |
+| Successful promotion left the dialog open with weak feedback and allowed repeated submissions. | Close after success, show the saved promotion with reviewer/time, replace the promoted form with a status message, and expose pending/error states. Isolated browser checks covered rejection, retry, success and reopening without changing business trust history. |
 
 ## Executed evidence
 
@@ -33,6 +34,7 @@ Codex assisted with implementation, source review, test design, debugging and do
 - Twenty saved measured reports retain successes and failures. Their known estimated provider cost totals USD 1.433768400; estimates are not billing receipts. Mock inference is used only in automated tests, never as measured-run or human evidence.
 - Key-free evidence import was run twice against the isolated test database and showed current 16/16 baselines for both tenants. Temporary imports were removed afterward; development conversations were preserved.
 - Browser verification checked current-version badges, independent human-review fields, judge masking, Arabic/currency presentation and overflow. Workflow approvals and test fixtures were not counted as independent human labels.
+- Exported ten actual saved human labels, five per business, with 15/15 dimension agreements per business and the named promotion history. References were checked against the committed accepted runs. Qamar's operational history also contains an automatically approved FAQ with simulated delivery; Rimal automatic sending remains off.
 
 These are Codex-executed checks, not independent human technical sign-off. Human labels must be supplied through actual reviews and exported from saved data; their completion is not fabricated. The Loom guide is a recording plan, not a recorded video.
 
