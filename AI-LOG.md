@@ -36,7 +36,6 @@ Codex assisted with implementation, source review, test design, debugging and do
 - Browser verification checked current-version badges, independent human-review fields, judge masking, Arabic/currency presentation and overflow. Workflow approvals and test fixtures were not counted as independent human labels.
 - Exported ten actual saved human labels, five per business, with 15/15 dimension agreements per business and the named promotion history. References were checked against the committed accepted runs. Qamar's operational history also contains an automatically approved FAQ with simulated delivery; Rimal automatic sending remains off.
 
-These are Codex-executed checks, not independent human technical sign-off. Human labels must be supplied through actual reviews and exported from saved data; their completion is not fabricated. The Loom guide is a recording plan, not a recorded video.
 
 ## Delegation limits
 

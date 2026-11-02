@@ -4,6 +4,8 @@ A local sales-review workspace for the Trust Desk challenge. Receive a synthetic
 
 **Agents draft. Code decides. People approve commitments.**
 
+[Recorded walkthrough (Loom)](https://www.loom.com/share/87623409be894da1a585f99359db95ac)
+
 ## Start in five commands
 
 Requires Bun **1.3.14** and Docker Compose. From the repository root:
@@ -89,4 +91,4 @@ bun run db:studio   # Drizzle Studio, using root .env database configuration
 
 Automated tests mock inference only inside test code; stored measured evidence uses real provider calls. The local simulator proves database idempotence, not exactly-once delivery to an external provider.
 
-Read [DESIGN](DESIGN.md) for tradeoffs/threats and exactly two depth choices (isolation and Arabic), [REVIEW](REVIEW.md) for the supplied bad handler, [TEAM-PLAN](TEAM-PLAN.md) for six weeks with two engineers, [AI-LOG](AI-LOG.md) for concise AI usage/error evidence, and [the walkthrough](docs/DEMO.md) for recording the required Loom. [AGENTS](AGENTS.md), [backend guide](docs/BACKEND.md), [database guide](packages/db/README.md) and [skill sources](docs/SKILLS.md) describe maintenance boundaries. Production authentication, real channel sending/reconciliation, load certification and the human-recorded video remain outside the implemented local demo.
+Read [DESIGN](DESIGN.md) for tradeoffs/threats and exactly two depth choices (isolation and Arabic), [REVIEW](REVIEW.md) for the supplied bad handler, [TEAM-PLAN](TEAM-PLAN.md) for six weeks with two engineers, and [AI-LOG](AI-LOG.md) for concise AI usage/error evidence. The human-recorded Loom is linked above. [AGENTS](AGENTS.md), [backend guide](docs/BACKEND.md), [database guide](packages/db/README.md) and [skill sources](docs/SKILLS.md) describe maintenance boundaries. Production authentication, real channel sending/reconciliation and load certification remain outside the implemented local demo.
